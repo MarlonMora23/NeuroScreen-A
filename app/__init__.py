@@ -9,8 +9,6 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    @app.route("/health")
-    def health():
-        return {"status": "ok"}
+    from app import models
 
     return app
