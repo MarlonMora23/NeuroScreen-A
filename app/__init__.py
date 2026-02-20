@@ -2,6 +2,8 @@ from flask import Flask
 from .config import Config
 from .extensions import db, migrate, jwt
 from app.models.user import User
+from app.celery_app import create_celery
+from app.utils.security import register_jwt_callbacks
 
 def create_app():
     app = Flask(__name__)
@@ -20,6 +22,11 @@ def create_app():
     def user_lookup_callback(_jwt_header, jwt_data):
         identity = jwt_data["sub"]
         return db.session.get(User, int(identity))
+    
+    register_jwt_callbacks(app)
+    
+    celery = create_celery(app)
+    app.celery = celery
 
     from app import models
     from app.routes import api_bp

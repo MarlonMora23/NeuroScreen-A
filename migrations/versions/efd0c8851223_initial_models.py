@@ -1,8 +1,8 @@
-"""initial models
+"""Initial models
 
-Revision ID: 53c0f926138f
+Revision ID: efd0c8851223
 Revises: 
-Create Date: 2026-02-18 12:28:01.849452
+Create Date: 2026-02-19 18:17:52.021814
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '53c0f926138f'
+revision = 'efd0c8851223'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -74,7 +74,7 @@ def upgrade():
     sa.Column('file_path', sa.String(length=500), nullable=False),
     sa.Column('file_type', sa.String(length=120), nullable=False),
     sa.Column('file_size_bytes', sa.BigInteger(), nullable=True),
-    sa.Column('status', sa.Enum('PENDING', 'PROCESSED', 'FAILED', name='eegstatus'), nullable=False),
+    sa.Column('status', sa.Enum('PENDING', 'PROCESSING', 'PROCESSED', 'FAILED', name='eegstatus'), nullable=False),
     sa.Column('error_msg', sa.Text(), nullable=True),
     sa.Column('processing_time_ms', sa.Integer(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
