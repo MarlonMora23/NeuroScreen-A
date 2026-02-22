@@ -1,0 +1,11 @@
+venv
+venv/
+__pycache__/
+*.pyc
+.dockerignore
+.git
+dl_models
+*.keras
+*.h5
+*.ckpt
+.env
