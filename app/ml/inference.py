@@ -2,9 +2,11 @@ import numpy as np
 from app.ml.model_loader import get_model
 from app.models.prediction_result import AlcoholismRisk
 
+
 def run_inference(X: np.ndarray) -> tuple[AlcoholismRisk, float, float]:
     model = get_model()
-    preds = model.predict(X, verbose=0)
+
+    preds = model.predict(X, verbose=0).flatten()
 
     mean_prob = float(np.mean(preds))
     is_alcoholic = mean_prob >= 0.5
