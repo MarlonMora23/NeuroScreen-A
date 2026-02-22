@@ -1,8 +1,6 @@
 import time
 from app.extensions import db, celery
-from app.domain.reader.parquet_reader import ParquetEegReader
 from app.ml.inference import run_inference
-from app.ml.model_loader import get_model
 from app.models.eeg_record import EegRecord, EegStatus
 from app.models.prediction_result import PredictionResult
 from app.ml.preprocessing import build_tensor_from_parquet
@@ -61,4 +59,4 @@ def process_eeg_record(self, eeg_record_id: int):
         except Exception:
             db.session.rollback()
 
-        raise self.retry(exc=e, countdown=10)  # reintenta tras 60s, máximo 3 veces
+        raise self.retry(exc=e, countdown=60)  # reintenta tras 60s, máximo 3 veces

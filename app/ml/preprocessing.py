@@ -8,7 +8,7 @@ PREDEFINED_CHANNELS = [
     "O1", "O2",                                                      # Occipital
     "C1", "C2", "C3", "C4", "C5", "CP2", "CP3", "CP5", "CP6", "CPZ", # Central
     "AF7", "AF8",
-    "P1", "P4", "P5", "P6", "P7", "P8", "PO1", "PO7", "O8",          # Parietal
+    "P1", "P4", "P5", "P6", "P7", "P8", "PO1", "PO7", "PO8",          # Parietal
     "T7", "T8", "TP7"
     ]
 
@@ -85,20 +85,18 @@ def build_tensor_from_parquet(
     """
 
     if channels is None:
-        channels = PREDEFINED_CHANNELS
+        channels = PREDEFINED_CHANNELS  # 33 exactos
 
     df = pd.read_parquet(parquet_path)
 
-    if df.empty:
-        return np.array([])
+    available_channels = set(df['channel'].unique())
+    channels_to_use = channels
 
-    available_channels = set(df["channel"].unique())
-    channels_to_use = list(set(channels) & available_channels)
+    missing_channels = [ch for ch in channels if ch not in available_channels]
+    if missing_channels:
+        raise ValueError(f"Missing required channels: {missing_channels}")
 
-    if not channels_to_use:
-        return np.array([])
-
-    actual_n_channels = len(channels_to_use) * 6 if use_bands else len(channels_to_use)
+    actual_n_channels = len(channels_to_use) * 6
 
     X_data = []
 
@@ -152,5 +150,12 @@ def build_tensor_from_parquet(
 
     if not X_data:
         return np.array([])
+    
+    X = np.array(X_data, dtype=np.float32)
+    
+    print(channels_to_use)
+    print(actual_n_channels)
+    print(X.shape)
+    print("Number of windows:", X.shape[0])
 
-    return np.array(X_data, dtype=np.float32)
+    return X
