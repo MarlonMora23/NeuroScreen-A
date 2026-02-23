@@ -12,7 +12,7 @@ const Footer = () => {
             </span>
           </div>
           <p className="text-sm text-muted-foreground text-center">
-            Detección de alcoholismo mediante EEG y Redes Neuronales Convolucionales
+            © {new Date().getFullYear()} Marlon Mora y Martín Correa.
           </p>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Activity className="w-3 h-3 text-primary animate-pulse-glow" />

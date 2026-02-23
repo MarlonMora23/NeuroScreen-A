@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, current_app, jsonify
 from flask_jwt_extended import jwt_required
 from app.utils.security import get_current_user
 from app.services.prediction_result_service import PredictionResultService
@@ -23,6 +23,9 @@ def get_prediction_by_eeg(eeg_record_id):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @predictions_bp.route("/patients/<int:patient_id>/predictions", methods=["GET"])
@@ -42,6 +45,9 @@ def list_predictions_by_patient(patient_id):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @predictions_bp.route("/predictions", methods=["GET"])
@@ -56,3 +62,6 @@ def list_all_predictions():
         return jsonify(predictions), 200
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500

@@ -12,6 +12,16 @@ class Config:
 
     CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
     CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+    
+    # CORS Configuration
+    ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:8080,http://localhost:80").split(",")
+    ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS]  # Remove whitespace
+    
+    # CORS configuration details
+    CORS_ALLOW_HEADERS = ["Content-Type", "Authorization"]
+    CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    CORS_SUPPORTS_CREDENTIALS = True
+    CORS_MAX_AGE = 3600
 
 
 class TestingConfig(Config):

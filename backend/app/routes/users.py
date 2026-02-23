@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, current_app, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.services.user_service import UserService
 from app.utils.security import get_current_user
@@ -18,6 +18,9 @@ def create_user():
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @users_bp.route("/users", methods=["GET"])
@@ -29,6 +32,9 @@ def list_users():
         return jsonify(users), 200
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @users_bp.route("/users/<int:user_id>", methods=["GET"])
@@ -42,6 +48,9 @@ def get_user(user_id):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
     
 @users_bp.route("/users/<int:user_id>", methods=["PUT"])
@@ -57,6 +66,9 @@ def update_user(user_id):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @users_bp.route("/users/<int:user_id>", methods=["DELETE"])
@@ -70,6 +82,6 @@ def delete_user(user_id):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
-    
-
-
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500

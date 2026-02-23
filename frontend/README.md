@@ -1,73 +1,230 @@
-# Welcome to your Lovable project
+# Frontend - NeuroScreen-A
 
-## Project info
+Interface web moderna y responsiva para la gestión de pacientes, registros EEG y predicciones de análisis neurológico.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🛠️ Stack Tecnológico
 
-## How can I edit this code?
+- **React 18** - Librería UI
+- **TypeScript** - Type safety
+- **Vite** - Build tool y dev server
+- **Tailwind CSS** - Estilos utilities
+- **shadcn/ui** - Componentes UI reutilizables
+- **React Router v6** - Enrutamiento
+- **TanStack Query** - Manejo de estado async
+- **React Hook Form + Zod** - Formularios con validación
+- **Recharts** - Visualización de datos
+- **Supabase JS** - Integración auth
+- **Framer Motion** - Animaciones
+- **Vitest** - Testing
 
-There are several ways of editing your application.
+## 📁 Estructura del Proyecto
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+├── components/              # Componentes reutilizables
+│   ├── ui/                 # Componentes shadcn/ui
+│   ├── dashboard/          # Componentes del dashboard
+│   ├── EEGSignalPreview.tsx
+│   ├── EEGWave.tsx
+│   ├── Navbar.tsx
+│   ├── Features.tsx
+│   └── protected-route.tsx
+├── contexts/               # Context API
+│   └── auth-context.tsx    # Contexto de autenticación
+├── pages/                  # Páginas principales
+│   ├── Index.tsx          # Página de inicio
+│   ├── Login.tsx          # Página de autenticación
+│   ├── Dashboard.tsx      # Dashboard principal
+│   └── NotFound.tsx       # Página 404
+├── services/              # Servicios HTTP
+│   ├── auth-service.ts
+│   ├── eeg-service.ts
+│   ├── patient-service.ts
+│   └── ...
+├── hooks/                 # Custom hooks
+│   ├── use-toast.ts
+│   └── use-mobile.tsx
+├── config/               # Configuración
+│   └── api.ts           # Configuración de endpoints
+├── lib/                 # Utilidades
+│   └── utils.ts
+├── integrations/        # Integraciones externas
+│   └── supabase/
+├── test/               # Tests
+├── App.tsx
+├── main.tsx
+└── index.css
 ```
 
-**Edit a file directly in GitHub**
+## 🚀 Inicio Rápido
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Prerrequisitos
+- Node.js 18+
+- npm o bun
 
-**Use GitHub Codespaces**
+### Instalación
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+cd frontend
 
-## What technologies are used for this project?
+# Instalar dependencias
+npm install
+# o con bun
+bun install
+```
 
-This project is built with:
+### Configuración de Variables de Entorno
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Crear un archivo `.env.local` en la raíz del frontend:
 
-## How can I deploy this project?
+```env
+VITE_API_URL=http://localhost:5000
+VITE_SUPABASE_URL=tu_supabase_url
+VITE_SUPABASE_ANON_KEY=tu_supabase_key
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### Desarrollo
 
-## Can I connect a custom domain to my Lovable project?
+```bash
+# Iniciar servidor de desarrollo
+npm run dev
 
-Yes, you can!
+# El frontend estará disponible en http://localhost:8080
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Build para Producción
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```bash
+# Compilar para producción
+npm run build
+
+# Previsualizar build de producción
+npm run preview
+```
+
+## 📋 Scripts Disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Inicia el servidor de desarrollo |
+| `npm run build` | Genera optimizado para producción |
+| `npm run build:dev` | Build en modo desarrollo |
+| `npm run preview` | Previsualiza el build |
+| `npm run lint` | Ejecuta ESLint |
+| `npm test` | Ejecuta tests una vez |
+| `npm run test:watch` | Ejecuta tests en modo watch |
+
+## 🏗️ Arquitectura
+
+### Autenticación
+
+El flujo de autenticación se maneja a través del `AuthContext`:
+- Gestiona el estado del usuario logueado
+- Persiste sesión en localStorage
+- Proporciona métodos de login/logout
+- Integración con Supabase para JWT
+
+### Protección de Rutas
+
+La ruta `/dashboard` es protegida mediante el componente `ProtectedRoute` que redirige a login si el usuario no está autenticado.
+
+### Consumo de APIs
+
+Los servicios HTTP se encuentran en `src/services/` y utilizan TanStack Query para:
+- Caching automático
+- Sincronización de datos
+- Retry automático
+- Invalidación de caché
+
+### Formularios
+
+Se utiliza React Hook Form con Zod para:
+- Validación automática
+- Manejo de errores
+- Experiencia de usuario mejorada
+
+## 🎨 Componentes Principales
+
+### Pages
+- **Index** - Landing page con información del producto
+- **Login** - Autenticación de usuarios
+- **Dashboard** - Panel principal con gestión de pacientes y análisis
+
+### Componentes
+- **Navbar** - Barra de navegación responsive
+- **EEGSignalPreview** - Visualización de señales EEG
+- **EEGWave** - Gráfico de ondas EEG
+- **Features** - Sección de características
+
+## 🧪 Testing
+
+```bash
+# Ejecutar tests
+npm run test
+
+# Tests en modo watch
+npm run test:watch
+```
+
+Los tests utilizan **Vitest** y **React Testing Library**.
+
+## 📦 Dependencias Principales
+
+- **@radix-ui/\*** - Componentes accesibles base
+- **@tanstack/react-query** - Manejo de estado async
+- **react-router-dom** - Enrutamiento
+- **framer-motion** - Animaciones
+- **recharts** - Gráficos
+- **react-hook-form** - Gestión de formularios
+- **zod** - Validación de datos
+- **tailwindcss** - Framework CSS
+
+## 🐛 Debugging
+
+El proyecto incluye:
+- Source maps para debugging en desarrollo
+- React DevTools compatible
+- ESLint para code quality
+
+## 🤝 Integración con Backend
+
+El frontend se conecta con el backend (Flask) a través de la API REST.
+
+Endpoints base configurados en `src/config/api.ts`.
+
+Para más información sobre los endpoints, consultar la documentación del backend en `backend/readme.md`.
+
+## 🔐 Seguridad
+
+- Almacenamiento seguro de tokens en contexto
+- Validación de datos con Zod
+- CSRF protection a través de headers
+- Sanitización de inputs en formularios
+
+## 📱 Responsividad
+
+El frontend es completamente responsive:
+- Mobile first approach
+- Tailwind CSS breakpoints
+- Componentes adaptables
+- Hook `use-mobile` para lógica responsiva
+
+## 🚀 Deployment
+
+Para desplegar en producción:
+
+```bash
+npm run build
+```
+
+Esto genera una carpeta `dist/` lista para servir con cualquier servidor web estático.
+
+Ver configuración en `nginx.conf` para deployment con Nginx.
+
+## 📄 Licencia
+
+Mismo que el proyecto padre NeuroScreen-A.
+
+## 📞 Soporte
+
+Para reportar bugs o sugerencias, consulta el repositorio principal del proyecto.

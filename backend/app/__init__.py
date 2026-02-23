@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from .config import Config, TestingConfig
 from .extensions import db, migrate, jwt
 from app.models.user import User
@@ -9,6 +10,16 @@ from app.utils.security import register_jwt_callbacks
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # Enable CORS with secure configuration
+    CORS(app, 
+         resources={r"/api/*": {
+             "origins": app.config["ALLOWED_ORIGINS"],
+             "allow_headers": app.config["CORS_ALLOW_HEADERS"],
+             "methods": app.config["CORS_ALLOW_METHODS"],
+             "supports_credentials": app.config["CORS_SUPPORTS_CREDENTIALS"],
+             "max_age": app.config["CORS_MAX_AGE"]
+         }})
 
     db.init_app(app)
     migrate.init_app(app, db)

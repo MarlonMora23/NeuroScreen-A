@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Shield, ShieldCheck } from "lucide-react";
+import { Plus, Search, Shield, ShieldCheck, AlertCircle, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -27,54 +28,80 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface AppUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  createdAt: string;
-}
-
-const MOCK_USERS: AppUser[] = [
-  { id: "U-001", name: "Dr. Admin", email: "admin@neuroscreen.com", role: "admin", createdAt: "2026-01-01" },
-  { id: "U-002", name: "Dra. Ana Martínez", email: "ana@neuroscreen.com", role: "investigador", createdAt: "2026-01-15" },
-  { id: "U-003", name: "Tec. Roberto Sánchez", email: "roberto@neuroscreen.com", role: "tecnico", createdAt: "2026-02-01" },
-];
+import { userService, AppUser, CreateUserRequest } from "@/services/user-service";
 
 const UsersTab = () => {
-  const [users, setUsers] = useState<AppUser[]>(MOCK_USERS);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "" });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newUser, setNewUser] = useState<CreateUserRequest>({
+    first_name: "",
+    last_name: "",
+    email: "",
+    password: "",
+    role: "",
+  });
 
-  const filtered = users.filter((u) =>
-    u.name.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
+  // Cargar usuarios
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await userService.getUsers();
+      setUsers(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Error al cargar usuarios";
+      setError(errorMessage);
+      console.error("Error loading users:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filtered = users.filter(
+    (u) =>
+      u.first_name.toLowerCase().includes(search.toLowerCase()) ||
+      u.last_name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const user: AppUser = {
-      id: `U-${String(users.length + 1).padStart(3, "0")}`,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setUsers([user, ...users]);
-    setNewUser({ name: "", email: "", password: "", role: "" });
-    setOpen(false);
+    setIsCreating(true);
+    try {
+      await userService.createUser(newUser);
+      await loadUsers();
+      setNewUser({
+        first_name: "",
+        last_name: "",
+        email: "",
+        password: "",
+        role: "",
+      });
+      setOpen(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Error al crear usuario";
+      setError(errorMessage);
+      console.error("Error creating user:", err);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const roleBadge = (role: string) => {
     const variants: Record<string, string> = {
       admin: "bg-primary/20 text-primary border-primary/30",
-      investigador: "bg-accent/20 text-accent border-accent/30",
-      tecnico: "bg-success/20 text-success border-success/30",
+      user: "bg-blue-500/20 text-blue-500 border-blue-500/30",
     };
     return (
-      <Badge variant="outline" className={variants[role] || ""}>
+      <Badge variant="outline" className={variants[role] || "bg-secondary/20 text-secondary border-secondary/30"}>
         {role === "admin" && <ShieldCheck className="w-3 h-3 mr-1" />}
         {role.charAt(0).toUpperCase() + role.slice(1)}
       </Badge>
@@ -83,6 +110,13 @@ const UsersTab = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      {error && (
+        <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -91,12 +125,13 @@ const UsersTab = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 bg-secondary/50"
+            disabled={loading}
           />
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="glow-primary gap-2">
+            <Button className="glow-primary gap-2" disabled={loading || isCreating}>
               <Plus className="w-4 h-4" />
               Nuevo Usuario
             </Button>
@@ -110,13 +145,25 @@ const UsersTab = () => {
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4 pt-2">
               <div className="space-y-2">
-                <Label>Nombre completo</Label>
+                <Label>Nombre</Label>
                 <Input
                   required
-                  value={newUser.name}
-                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  value={newUser.first_name}
+                  onChange={(e) => setNewUser({ ...newUser, first_name: e.target.value })}
                   placeholder="Nombre del usuario"
                   className="bg-secondary/50"
+                  disabled={isCreating}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Apellido</Label>
+                <Input
+                  required
+                  value={newUser.last_name}
+                  onChange={(e) => setNewUser({ ...newUser, last_name: e.target.value })}
+                  placeholder="Apellido del usuario"
+                  className="bg-secondary/50"
+                  disabled={isCreating}
                 />
               </div>
               <div className="space-y-2">
@@ -128,6 +175,7 @@ const UsersTab = () => {
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                   placeholder="correo@ejemplo.com"
                   className="bg-secondary/50"
+                  disabled={isCreating}
                 />
               </div>
               <div className="space-y-2">
@@ -139,6 +187,7 @@ const UsersTab = () => {
                   onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                   placeholder="••••••••"
                   className="bg-secondary/50"
+                  disabled={isCreating}
                 />
               </div>
               <div className="space-y-2">
@@ -146,19 +195,26 @@ const UsersTab = () => {
                 <Select
                   value={newUser.role}
                   onValueChange={(v) => setNewUser({ ...newUser, role: v })}
+                  disabled={isCreating}
                 >
                   <SelectTrigger className="bg-secondary/50">
                     <SelectValue placeholder="Seleccionar rol" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="investigador">Investigador</SelectItem>
-                    <SelectItem value="tecnico">Técnico</SelectItem>
+                    <SelectItem value="user">Usuario</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full glow-primary">
-                Crear Usuario
+              <Button type="submit" className="w-full glow-primary" disabled={isCreating}>
+                {isCreating ? (
+                  <span className="flex items-center gap-2">
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Creando...
+                  </span>
+                ) : (
+                  "Crear Usuario"
+                )}
               </Button>
             </form>
           </DialogContent>
@@ -166,28 +222,47 @@ const UsersTab = () => {
       </div>
 
       <div className="glass rounded-xl overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border/30 hover:bg-transparent">
-              <TableHead>ID</TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead className="hidden sm:table-cell">Email</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead className="hidden md:table-cell">Registro</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((u) => (
-              <TableRow key={u.id} className="border-border/20">
-                <TableCell className="font-mono text-primary text-sm">{u.id}</TableCell>
-                <TableCell className="font-medium">{u.name}</TableCell>
-                <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{u.email}</TableCell>
-                <TableCell>{roleBadge(u.role)}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{u.createdAt}</TableCell>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border/30 hover:bg-transparent">
+                <TableHead>ID</TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead className="hidden sm:table-cell">Email</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead className="hidden md:table-cell">Registro</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((u) => (
+                <TableRow key={u.id} className="border-border/20">
+                  <TableCell className="font-mono text-primary text-sm">{u.id}</TableCell>
+                  <TableCell className="font-medium">
+                    {u.first_name} {u.last_name}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                    {u.email}
+                  </TableCell>
+                  <TableCell>{roleBadge(u.role)}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                    {u.created_at ? new Date(u.created_at).toLocaleDateString() : "-"}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!loading && filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    No se encontraron usuarios
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </motion.div>
   );
