@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, current_app, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from app.services.auth_service import AuthService
 
@@ -13,6 +13,9 @@ def login():
         return jsonify(result), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 401
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @auth_bp.route("/auth/logout", methods=["POST"])
@@ -22,8 +25,9 @@ def logout():
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         AuthService.logout(token)
         return jsonify({"message": "Session closed successfully"}), 200
-    except Exception:
-        return jsonify({"error": "Could not close session"}), 500
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @auth_bp.route("/auth/me", methods=["GET"])
@@ -40,5 +44,6 @@ def me():
             "role": user.role.value,
             "last_login": user.last_login.isoformat() if user.last_login else None,
         }), 200
-    except Exception:
-        return jsonify({"error": "Could not retrieve user info"}), 500
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from app.services.eeg_record_service import EegRecordService
 from app.utils.security import get_current_user
@@ -31,16 +31,15 @@ def upload_eeg():
         # Enqueue background task passing the record ID
         process_eeg_record.delay(record["id"])
 
-        return jsonify({
-            "message": "EEG file uploaded successfully. Processing started.",
-            "eeg_record_id": record["id"],
-            "status": record["status"],
-        }), 202
+        return jsonify(record), 202
 
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 @eeg_records_bp.route("/eeg-records", methods=["GET"])
 @jwt_required()
@@ -57,6 +56,9 @@ def list_eeg_records():
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 @eeg_records_bp.route("/eeg-records/<int:eeg_id>", methods=["GET"])
 @jwt_required()
@@ -69,6 +71,9 @@ def get_eeg_record(eeg_id):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 @eeg_records_bp.route("/patients/<int:patient_id>/eeg-records", methods=["GET"])
 @jwt_required()
@@ -81,6 +86,9 @@ def list_by_patient(patient_id):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
     
 @eeg_records_bp.route("/eeg-records/<int:eeg_id>/status", methods=["GET"])
 @jwt_required()
@@ -93,6 +101,9 @@ def get_eeg_status(eeg_id):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
     
 @eeg_records_bp.route("/eeg-records/<int:eeg_id>", methods=["DELETE"])
 @jwt_required()
@@ -105,3 +116,6 @@ def delete_eeg_record(eeg_id):
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500

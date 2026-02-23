@@ -1,78 +1,211 @@
-# NeuroScreen-A Backend
+# NeuroScreen-A - Sistema de Detección Temprana de Alcoholismo
 
-NeuroScreen-A es el backend para un sistema de detección temprana de alcoholismo. Proporciona servicios de procesamiento de datos EEG, inferencia de modelos de machine learning y gestión de usuarios y pacientes.
+## 📋 Descripción General
 
-## Descripción
-Este backend está diseñado para soportar la aplicación NeuroScreen-A, que ayuda en la detección temprana de alcoholismo mediante el análisis de registros EEG y la predicción basada en modelos de aprendizaje automático.
+NeuroScreen-A es una aplicación web full-stack para la detección temprana de alcoholismo mediante análisis de registros EEG y modelos de machine learning.
 
-## Requisitos
-- Docker
-- Docker Compose
+**Estado**: ✅ Frontend y Backend totalmente integrados
 
-## Levantar el sistema con Docker
-1. Asegúrate de tener Docker y Docker Compose instalados.
-2. En la raíz del proyecto, ejecuta:
+## 🚀 Inicio Rápido
 
-```
+### Con Docker Compose (Recomendado)
+
+```bash
+# Desde la raíz del proyecto
 docker-compose up --build
 ```
 
-Esto levantará todos los servicios necesarios.
+Accede a:
+- **Frontend**: http://localhost:8080
+- **Backend API**: http://localhost:5000
 
-## Estructura del proyecto
-- `app/`: Código fuente principal
-- `dl_models/`: Modelos de machine learning
-- `migrations/`: Migraciones de base de datos
-- `tests/`: Pruebas unitarias
+### Sin Docker
 
-## Rutas disponibles (API Endpoints)
+```bash
+# Terminal 1: Backend
+cd backend
+python run.py
 
-### Autenticación (Auth)
-| Método | Ruta | Propósito |
-|:------:|:-----|:---------|
-| **POST** | `api/auth/login` | Iniciar sesión con credenciales de usuario |
-| **POST** | `api/auth/logout` | Cerrar sesión (requiere token JWT) |
-| **GET** | `api/auth/me` | Obtener información del usuario autenticado actual |
+# Terminal 2: Frontend
+cd frontend
+npm install
+VITE_API_URL=http://localhost:5000 npm run dev
+```
 
-### Usuarios
-| Método | Ruta | Propósito |
-|:------:|:-----|:---------|
-| **POST** | `api/users` | Crear un nuevo usuario (requiere permisos de administrador) |
-| **GET** | `api/users` | Listar todos los usuarios |
-| **GET** | `api/users/<user_id>` | Obtener información de un usuario específico por ID |
-| **PUT** | `api/users/<user_id>` | Actualizar información de un usuario |
-| **DELETE** | `api/users/<user_id>` | Eliminar un usuario |
+## 📁 Estructura del Proyecto
+
+```
+NeuroScreen-A/
+├── frontend/                  # React + TypeScript + Vite
+│   ├── src/
+│   │   ├── config/           # Configuración de API
+│   │   ├── services/         # Servicios HTTP
+│   │   ├── contexts/         # Context de autenticación
+│   │   ├── components/       # Componentes React
+│   │   ├── pages/           # Páginas principales
+│   │   └── App.tsx
+│   ├── .env.example          # Variables de entorno
+│   └── package.json
+│
+├── backend/                    # Flask + SQLAlchemy
+│   ├── app/
+│   │   ├── routes/           # Endpoints API
+│   │   ├── services/         # Lógica de negocio
+│   │   ├── models/           # Modelos de BD
+│   │   ├── ml/              # Modelos ML
+│   │   └── tasks/           # Tareas asíncronas
+│   ├── dl_models/           # Modelos EEGNet
+│   ├── migrations/          # Migraciones DB
+│   └── run.py
+│
+└── docker-compose.yml         # Orquestación de servicios
+```
+
+## 🔧 Configuración
+
+### Frontend (.env - Raíz)
+
+Todas las variables de entorno se configuran en un único archivo `.env` en la raíz del proyecto:
+
+```env
+VITE_API_URL=http://localhost:5000
+POSTGRES_USER=eeguser
+POSTGRES_PASSWORD=eegpassword
+# ... más variables
+```
+
+### Backend (app/config.py)
+
+Configurar según el ambiente (desarrollo, pruebas, producción).
+
+## 📚 Documentación
+
+- **[backend/readme.md](./backend/readme.md)** - Documentación del backend
+- **[frontend/README.md](./frontend/README.md)** - Documentación del frontend
+
+## ✨ Características
+
+### Autenticación
+- ✅ Login/Logout
+- ✅ JWT tokens
+- ✅ Persistencia de sesión
+- ✅ Rutas protegidas
+
+### Gestión de Datos
+- ✅ CRUD de pacientes
+- ✅ Gestión de usuarios
+- ✅ Carga de archivos EEG
+- ✅ Predicciones en tiempo real
+
+### UI/UX
+- ✅ Dashboard intuitivo
+- ✅ Indicadores de carga
+- ✅ Manejo de errores
+- ✅ Responsive design
+
+## 🔐 Seguridad
+
+- JWTs para autenticación
+- CORS configurado
+- Validación en frontend y backend
+- Rutas protegidas
+
+## 🗂️ Stack Tecnológico
+
+### Frontend
+- React 18
+- TypeScript
+- Vite
+- TailwindCSS
+- React Query
+- Framer Motion
+
+### Backend
+- Flask
+- SQLAlchemy
+- PostgreSQL
+- Celery (tareas asíncronas)
+- TensorFlow/Keras (modelos ML)
+
+## 📝 Primeros Pasos
+
+1. **Configura el entorno**
+   ```bash
+   # Copia .env.example a .env
+   cp frontend/.env.example frontend/.env
+   ```
+
+2. **Levanta los servicios**
+   ```bash
+   docker-compose up
+   ```
+
+3. **Accede a la aplicación**
+   - Frontend: http://localhost:8080
+   - Backend: http://localhost:5000
+
+4. **Crea un usuario admin (opcional)**
+   ```bash
+   cd backend
+   python create_admin.py
+   ```
+
+5. **Inicia sesión**
+   - Email: usuario@ejemplo.com
+   - Contraseña: configurada en paso anterior
+
+## 🐛 Troubleshooting
+
+### Error: Cannot reach backend
+- Verifica que el backend está ejecutándose (puerto 5000)
+- Verifica la URL en `.env` del frontend
+
+### Error: CORS
+- Asegúrate de que el backend tiene CORS habilitado
+- Verifica los orígenes permitidos
+
+### Error: 401 Unauthorized
+- El token puede haber expirado
+- Intenta cerrar sesión y volver a iniciar
+
+## 📊 Endpoints Principales
+
+### Autenticación
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
 
 ### Pacientes
-| Método | Ruta | Propósito |
-|:------:|:-----|:---------|
-| **POST** | `api/patients` | Crear un nuevo paciente |
-| **GET** | `api/patients` | Listar pacientes con filtros opcionales (número de identificación, nombre, apellido, registros EEG, EEG pendientes) |
-| **GET** | `api/patients/<patient_id>` | Obtener información completa de un paciente específico |
-| **PUT** | `api/patients/<patient_id>` | Actualizar información de un paciente |
-| **DELETE** | `api/patients/<patient_id>` | Eliminar un paciente |
+- `GET/POST /api/patients`
+- `GET/PUT/DELETE /api/patients/<id>`
+
+### Usuarios
+- `GET/POST /api/users`
+- `GET/PUT/DELETE /api/users/<id>`
 
 ### Registros EEG
-| Método | Ruta | Propósito |
-|:------:|:-----|:---------|
-| **POST** | `api/eeg-records/upload` | Subir un archivo EEG para procesamiento (inicia tarea asíncrona) |
-| **GET** | `api/eeg-records` | Listar todos los registros EEG con filtros opcionales (patient_id, status) |
-| **GET** | `api/eeg-records/<eeg_id>` | Obtener detalles de un registro EEG específico |
-| **GET** | `api/patients/<patient_id>/eeg-records` | Obtener todos los registros EEG de un paciente específico |
-| **GET** | `api/eeg-records/<eeg_id>/status` | Obtener el estado actual de procesamiento de un registro EEG |
-| **DELETE** | `api/eeg-records/<eeg_id>` | Eliminar un registro EEG |
+- `GET/POST /api/eeg-records`
+- `POST /api/eeg-records/upload`
+- `GET /api/eeg-records/<id>/prediction`
 
-### Resultados de Predicciones
-| Método | Ruta | Propósito |
-|:------:|:-----|:---------|
-| **GET** | `api/eeg-records/<eeg_record_id>/prediction` | Obtener el resultado de predicción asociado a un registro EEG específico |
-| **GET** | `api/patients/<patient_id>/predictions` | Obtener el historial completo de predicciones de un paciente |
-| **GET** | `api/predictions` | Listar todas las predicciones del sistema (solo administrador) |
+Más detalles en [backend/readme.md](./backend/readme.md)
 
-## Notas de seguridad
-- Todas las rutas requieren autenticación mediante token JWT (excepto `/auth/login`)
-- Los permisos se validan según el rol del usuario (ADMIN, DOCTOR, TECHNICIAN, etc.)
-- Los doctores solo pueden ver información de sus propios pacientes
-- Los administradores tienen acceso completo a todos los recursos
+## 🚢 Despliegue
 
+Ver guías de despliegue en:
+- Frontend: Netlify, Vercel, Azure Static Web Apps
+- Backend: Heroku, Azure App Service, AWS EC2
 
+## 📞 Soporte
+
+Para reportar bugs o sugerencias, crea un Issue en el repositorio.
+
+## 📄 Licencia
+
+[no definida]
+
+---
+
+**Última actualización**: Febrero 2026
+
+¿Necesitas ayuda? Revisa [QUICK_START.md](./QUICK_START.md) o [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)

@@ -65,16 +65,25 @@ class PredictionResultService:
 
     @staticmethod
     def list_all(current_user: User) -> list:
-        if current_user.role != UserRole.ADMIN:
-            raise PermissionError("Only ADMIN can access the full predictions list")
 
-        predictions = (
-            db.session.query(PredictionResult)
-            .join(EegRecord, PredictionResult.eeg_record_id == EegRecord.id)
-            .filter(EegRecord.is_deleted == False)
-            .order_by(PredictionResult.created_at.desc())
-            .all()
-        )
+        if current_user.role != UserRole.ADMIN:
+            predictions = (
+                db.session.query(PredictionResult)
+                .join(EegRecord, PredictionResult.eeg_record_id == EegRecord.id)
+                .filter(EegRecord.uploader_id == current_user.id)
+                .filter(EegRecord.is_deleted == False)
+                .order_by(PredictionResult.created_at.desc())
+                .all()
+            )
+
+        else:
+            predictions = (
+                db.session.query(PredictionResult)
+                .join(EegRecord, PredictionResult.eeg_record_id == EegRecord.id)
+                .filter(EegRecord.is_deleted == False)
+                .order_by(PredictionResult.created_at.desc())
+                .all()
+            )
 
         return [PredictionResultService._to_dict(p) for p in predictions]
 

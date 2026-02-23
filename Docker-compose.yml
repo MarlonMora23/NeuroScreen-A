@@ -1,25 +1,10 @@
 services:
   api:
-    build: .
-    container_name: flask_api
+    build: ./backend
+    container_name: neuroscreen_api
     command: flask run --host=0.0.0.0
     ports:
       - "5000:5000"
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    environment:
-      - FLASK_APP=run.py
-      - FLASK_ENV=development
-    volumes:
-      - .:/app
-
-  worker:
-    build: .
-    container_name: celery_worker
-    command: celery -A run.celery worker --loglevel=info
     depends_on:
       db:
         condition: service_healthy
@@ -31,16 +16,44 @@ services:
       - FLASK_APP=run.py
       - FLASK_ENV=development
     volumes:
-      - .:/app
+      - ./backend:/app
+      - eeg_uploads:/app/uploads
+
+  worker:
+    build: ./backend
+    container_name: neuroscreen_worker
+    command: celery -A run.celery worker --loglevel=info
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+      - eeg_uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://api:5000}
+    container_name: neuroscreen_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
 
   redis:
     image: redis:7-alpine
     container_name: redis
     ports:
       - "6379:6379"
+
   db:
     image: postgres:15
-    container_name: eeg_postgres
+    container_name: neuroscreen_db
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -59,4 +72,5 @@ services:
 
 volumes:
   postgres_data:
+  eeg_uploads:
 

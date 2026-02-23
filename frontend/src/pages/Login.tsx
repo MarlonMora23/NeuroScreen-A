@@ -1,27 +1,38 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Brain, Activity, Eye, EyeOff, LogIn } from "lucide-react";
+import { Brain, Activity, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import EEGWave from "@/components/EEGWave";
+import { useAuth } from "@/contexts/auth-context";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, loading: authLoading, error: authError } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
-    // TODO: connect to external backend
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      await login(email, password);
       navigate("/dashboard");
-    }, 1000);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Error al iniciar sesión";
+      setError(errorMessage);
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,6 +70,14 @@ const Login = () => {
             </p>
           </div>
 
+          {/* Error Message */}
+          {(error || authError) && (
+            <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error || authError}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
@@ -69,8 +88,9 @@ const Login = () => {
                 placeholder="usuario@ejemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading || authLoading}
                 required
-                className="bg-secondary/50 border-border/50 focus:border-primary"
+                className="bg-secondary/50 border-border/50 focus:border-primary disabled:opacity-50"
               />
             </div>
 
@@ -83,13 +103,15 @@ const Login = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading || authLoading}
                   required
-                  className="bg-secondary/50 border-border/50 focus:border-primary pr-10"
+                  className="bg-secondary/50 border-border/50 focus:border-primary pr-10 disabled:opacity-50"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={loading || authLoading}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -98,10 +120,10 @@ const Login = () => {
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || authLoading || !email || !password}
               className="w-full h-12 text-base font-semibold glow-primary"
             >
-              {loading ? (
+              {loading || authLoading ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                   Ingresando...
