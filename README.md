@@ -25,3 +25,54 @@ Esto levantará todos los servicios necesarios.
 - `migrations/`: Migraciones de base de datos
 - `tests/`: Pruebas unitarias
 
+## Rutas disponibles (API Endpoints)
+
+### Autenticación (Auth)
+| Método | Ruta | Propósito |
+|:------:|:-----|:---------|
+| **POST** | `api/auth/login` | Iniciar sesión con credenciales de usuario |
+| **POST** | `api/auth/logout` | Cerrar sesión (requiere token JWT) |
+| **GET** | `api/auth/me` | Obtener información del usuario autenticado actual |
+
+### Usuarios
+| Método | Ruta | Propósito |
+|:------:|:-----|:---------|
+| **POST** | `api/users` | Crear un nuevo usuario (requiere permisos de administrador) |
+| **GET** | `api/users` | Listar todos los usuarios |
+| **GET** | `api/users/<user_id>` | Obtener información de un usuario específico por ID |
+| **PUT** | `api/users/<user_id>` | Actualizar información de un usuario |
+| **DELETE** | `api/users/<user_id>` | Eliminar un usuario |
+
+### Pacientes
+| Método | Ruta | Propósito |
+|:------:|:-----|:---------|
+| **POST** | `api/patients` | Crear un nuevo paciente |
+| **GET** | `api/patients` | Listar pacientes con filtros opcionales (número de identificación, nombre, apellido, registros EEG, EEG pendientes) |
+| **GET** | `api/patients/<patient_id>` | Obtener información completa de un paciente específico |
+| **PUT** | `api/patients/<patient_id>` | Actualizar información de un paciente |
+| **DELETE** | `api/patients/<patient_id>` | Eliminar un paciente |
+
+### Registros EEG
+| Método | Ruta | Propósito |
+|:------:|:-----|:---------|
+| **POST** | `api/eeg-records/upload` | Subir un archivo EEG para procesamiento (inicia tarea asíncrona) |
+| **GET** | `api/eeg-records` | Listar todos los registros EEG con filtros opcionales (patient_id, status) |
+| **GET** | `api/eeg-records/<eeg_id>` | Obtener detalles de un registro EEG específico |
+| **GET** | `api/patients/<patient_id>/eeg-records` | Obtener todos los registros EEG de un paciente específico |
+| **GET** | `api/eeg-records/<eeg_id>/status` | Obtener el estado actual de procesamiento de un registro EEG |
+| **DELETE** | `api/eeg-records/<eeg_id>` | Eliminar un registro EEG |
+
+### Resultados de Predicciones
+| Método | Ruta | Propósito |
+|:------:|:-----|:---------|
+| **GET** | `api/eeg-records/<eeg_record_id>/prediction` | Obtener el resultado de predicción asociado a un registro EEG específico |
+| **GET** | `api/patients/<patient_id>/predictions` | Obtener el historial completo de predicciones de un paciente |
+| **GET** | `api/predictions` | Listar todas las predicciones del sistema (solo administrador) |
+
+## Notas de seguridad
+- Todas las rutas requieren autenticación mediante token JWT (excepto `/auth/login`)
+- Los permisos se validan según el rol del usuario (ADMIN, DOCTOR, TECHNICIAN, etc.)
+- Los doctores solo pueden ver información de sus propios pacientes
+- Los administradores tienen acceso completo a todos los recursos
+
+

@@ -18,7 +18,7 @@ from app.models.patient import Patient
 # CONFIGURA AQUÍ TU ARCHIVO Y PACIENTE                                #
 # ------------------------------------------------------------------ #
 
-PARQUET_FILE_PATH = r"C:\Users\Marlon\Downloads\co3c0000402.parquet"
+PARQUET_FILE_PATH = r"C:\Users\Marlon\Downloads\co2c0000396.parquet"
 PATIENT_ID = 1  # Se creará automáticamente con este ID si no existe
 
 # ------------------------------------------------------------------ #
