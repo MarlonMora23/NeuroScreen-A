@@ -150,12 +150,5 @@ def build_tensor_from_parquet(
 
     if not X_data:
         return np.array([])
-    
-    X = np.array(X_data, dtype=np.float32)
-    
-    print(channels_to_use)
-    print(actual_n_channels)
-    print(X.shape)
-    print("Number of windows:", X.shape[0])
 
-    return X
+    return np.array(X_data, dtype=np.float32)
