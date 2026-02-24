@@ -9,9 +9,29 @@ Este backend está diseñado para soportar la aplicación NeuroScreen-A, que ayu
 - Docker
 - Docker Compose
 
-## Levantar el sistema con Docker
-1. Asegúrate de tener Docker y Docker Compose instalados.
-2. En la raíz del proyecto, ejecuta:
+## 🚀 Levantar el Sistema
+
+**Esta es la forma correcta de ejecutar el backend:**
+
+```bash
+# Desde la raíz del proyecto
+docker-compose up --build
+```
+
+**Esto levanta automáticamente:**
+- ✅ Backend (Flask API)
+- ✅ Base de datos (PostgreSQL)
+- ✅ Cache (Redis)
+- ✅ Celery Worker (procesamiento asíncronico)
+- ✅ Frontend (React con Nginx)
+
+> **Nota**: No intentes correr `python run.py` directamente sin Docker, ya que Celery no funcionará sin Redis ni el worker ejecutándose en paralelo.
+
+### URLs de Acceso
+- Backend API: `http://localhost:5000`
+- Frontend: `http://localhost`
+
+Ver configuración completa y opciones de desarrollo en [readme.md](/readme.md)
 
 ## Estructura del proyecto
 - `app/`: Código fuente principal
@@ -65,8 +85,24 @@ Este backend está diseñado para soportar la aplicación NeuroScreen-A, que ayu
 
 ## Notas de seguridad
 - Todas las rutas requieren autenticación mediante token JWT (excepto `/auth/login`)
-- Los permisos se validan según el rol del usuario (ADMIN, DOCTOR, TECHNICIAN, etc.)
-- Los doctores solo pueden ver información de sus propios pacientes
+- Los permisos se validan según el rol del usuario
+- Los usuarios solo pueden ver información de sus propios pacientes
 - Los administradores tienen acceso completo a todos los recursos
+
+## 🧪 Testing
+
+```bash
+# Ejecutar tests
+pytest -q
+```
+
+## 📄 Licencia
+
+Mismo que el proyecto padre NeuroScreen-A.
+
+## 📞 Soporte
+
+Para reportar bugs o sugerencias, consulta el repositorio principal del proyecto.
+
 
 
