@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Activity, AlertTriangle, CheckCircle2, AlertCircle, Loader } from "lucide-react";
+import {
+  Search,
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  AlertCircle,
+  Loader,
+  Plus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,13 +21,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
 import { eegService, PredictionResult } from "@/services/eeg-service";
 
-const ClassificationsTab = () => {
+interface ClassificationsTabProps {
+  onNavigateToUpload?: () => void;
+}
+
+const ClassificationsTab = ({
+  onNavigateToUpload,
+}: ClassificationsTabProps) => {
   const [predictions, setPredictions] = useState<PredictionResult[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState({
+    prediction_result: undefined as "alcoholic" | "non_alcoholic" | undefined,
+  });
 
   // Cargar predicciones
   useEffect(() => {
@@ -32,7 +51,8 @@ const ClassificationsTab = () => {
       const data = await eegService.getAllPredictions();
       setPredictions(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Error al cargar predicciones";
+      const errorMessage =
+        err instanceof Error ? err.message : "Error al cargar predicciones";
       setError(errorMessage);
       console.error("Error loading predictions:", err);
     } finally {
@@ -40,16 +60,31 @@ const ClassificationsTab = () => {
     }
   };
 
-  const filtered = predictions.filter((c) =>
-    String(c.id).toLowerCase().includes(search.toLowerCase()) ||
-    c.eeg_record_id.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = predictions.filter((c) => {
+    const matchesSearch =
+      String(c.id).toLowerCase().includes(search.toLowerCase()) ||
+      String(c.eeg_record_id).toLowerCase().includes(search.toLowerCase());
 
-  const totalAlcoholism = predictions.filter((c) => c.result === "alcoholic").length;
-  const totalControl = predictions.filter((c) => c.result === "non_alcoholic").length;
+    const matchesResult =
+      filters.prediction_result === undefined ||
+      c.result === filters.prediction_result;
+
+    return matchesSearch && matchesResult;
+  });
+
+  const totalAlcoholism = predictions.filter(
+    (c) => c.result === "alcoholic",
+  ).length;
+  const totalControl = predictions.filter(
+    (c) => c.result === "non_alcoholic",
+  ).length;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
       {error && (
         <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
           <AlertCircle className="h-4 w-4" />
@@ -57,14 +92,73 @@ const ClassificationsTab = () => {
         </Alert>
       )}
 
+      <div className="flex flex-col justify-between sm:flex-row gap-3 items-stretch sm:items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar predicción..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 bg-secondary/50"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-px bg-border/40 hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">
+              Resultado
+            </Label>
+            <select
+              value={
+                filters.prediction_result === undefined
+                  ? ""
+                  : String(filters.prediction_result)
+              }
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  prediction_result:
+                    e.target.value === ""
+                      ? undefined
+                      : (e.target.value as "alcoholic" | "non_alcoholic"),
+                })
+              }
+              className="px-3 py-2 bg-secondary/50 border border-border/30 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              disabled={loading}
+            >
+              <option value="">Todos</option>
+              <option value="alcoholic">Alcohólico</option>
+              <option value="non_alcoholic">No Alcohólico</option>
+            </select>
+          </div>
+
+          <div className="h-8 w-px bg-border/40 hidden sm:block" />
+          <Button
+            onClick={onNavigateToUpload}
+            disabled={loading}
+            className="gap-2 whitespace-nowrap"
+            size="sm"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva predicción
+          </Button>
+        </div>
+      </div>
+      
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="glass rounded-xl p-5 text-center">
-          <p className="text-3xl font-bold text-foreground">{predictions.length}</p>
+          <p className="text-3xl font-bold text-foreground">
+            {predictions.length}
+          </p>
           <p className="text-sm text-muted-foreground">Total Clasificaciones</p>
         </div>
         <div className="glass rounded-xl p-5 text-center">
-          <p className="text-3xl font-bold text-destructive">{totalAlcoholism}</p>
+          <p className="text-3xl font-bold text-destructive">
+            {totalAlcoholism}
+          </p>
           <p className="text-sm text-muted-foreground">Detectado Alcohólico</p>
         </div>
         <div className="glass rounded-xl p-5 text-center">
@@ -72,18 +166,7 @@ const ClassificationsTab = () => {
           <p className="text-sm text-muted-foreground">No Alcohólico</p>
         </div>
       </div>
-
-      <div className="relative w-full sm:w-80">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar predicción..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 bg-secondary/50"
-          disabled={loading}
-        />
-      </div>
-
+      
       <div className="glass rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -96,23 +179,35 @@ const ClassificationsTab = () => {
                 <TableHead>ID Predicción</TableHead>
                 <TableHead>Registro EEG</TableHead>
                 <TableHead>Resultado</TableHead>
-                <TableHead className="hidden sm:table-cell">Confianza</TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  Confianza
+                </TableHead>
                 <TableHead className="hidden md:table-cell">Fecha</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((c) => (
                 <TableRow key={c.id} className="border-border/20">
-                  <TableCell className="font-mono text-primary text-sm">{c.id}</TableCell>
-                  <TableCell className="font-mono text-sm text-muted-foreground">{c.eeg_record_id}</TableCell>
+                  <TableCell className="font-mono text-primary text-sm">
+                    {c.id}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm text-muted-foreground">
+                    {c.eeg_record_id}
+                  </TableCell>
                   <TableCell>
                     {c.result === "alcoholic" ? (
-                      <Badge variant="outline" className="bg-destructive/20 text-destructive border-destructive/30 gap-1">
+                      <Badge
+                        variant="outline"
+                        className="bg-destructive/20 text-destructive border-destructive/30 gap-1"
+                      >
                         <AlertTriangle className="w-3 h-3" />
                         Alcohólico
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-success/20 text-success border-success/30 gap-1">
+                      <Badge
+                        variant="outline"
+                        className="bg-success/20 text-success border-success/30 gap-1"
+                      >
                         <CheckCircle2 className="w-3 h-3" />
                         No Alcohólico
                       </Badge>
@@ -123,20 +218,30 @@ const ClassificationsTab = () => {
                       <div className="w-16 h-2 bg-secondary rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${c.result === "alcoholic" ? "bg-destructive" : "bg-success"}`}
-                          style={{ width: `${parseFloat(c.confidence.toString()) * 100}%` }}
+                          style={{
+                            width: `${parseFloat(c.confidence.toString()) * 100}%`,
+                          }}
                         />
                       </div>
-                      <span className="text-sm font-mono">{(parseFloat(c.confidence.toString()) * 100).toFixed(1)}%</span>
+                      <span className="text-sm font-mono">
+                        {(parseFloat(c.confidence.toString()) * 100).toFixed(1)}
+                        %
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-                    {c.created_at ? new Date(c.created_at).toLocaleDateString() : "-"}
+                    {c.created_at
+                      ? new Date(c.created_at).toLocaleDateString()
+                      : "-"}
                   </TableCell>
                 </TableRow>
               ))}
               {!loading && filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell
+                    colSpan={5}
+                    className="text-center text-muted-foreground py-8"
+                  >
                     No se encontraron clasificaciones
                   </TableCell>
                 </TableRow>

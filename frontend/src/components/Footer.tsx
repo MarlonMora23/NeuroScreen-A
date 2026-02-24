@@ -11,8 +11,9 @@ const Footer = () => {
               Neuro<span className="text-primary">Screen-A</span>
             </span>
           </div>
-          <p className="text-sm text-muted-foreground text-center">
-            © {new Date().getFullYear()} Marlon Mora y Martín Correa.
+          <p className="text-xs text-muted-foreground text-center">
+            Este sistema es una herramienta de apoyo basada en investigación
+            académica y no sustituye el diagnóstico médico profesional.
           </p>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Activity className="w-3 h-3 text-primary animate-pulse-glow" />
@@ -20,6 +21,9 @@ const Footer = () => {
           </div>
         </div>
       </div>
+      <p className="mt-4 text-xs text-muted-foreground text-center">
+        @ {new Date().getFullYear()} Marlon Mora y Martín Correa.
+      </p>
     </footer>
   );
 };

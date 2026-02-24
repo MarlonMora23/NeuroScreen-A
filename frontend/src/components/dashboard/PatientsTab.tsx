@@ -28,7 +28,7 @@ import {
 
 const PatientsTab = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(""); // Búsqueda que se envía al backend
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,28 +44,22 @@ const PatientsTab = () => {
     birth_date: "",
   });
 
-  // Cargar pacientes cuando cambian los filtros o búsqueda
+  // Cargar pacientes solo cuando cambian los filtros o se hace búsqueda
   useEffect(() => {
     loadPatients();
-  }, [search, filters]);
+  }, [filters]);
 
   const loadPatients = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Preparar filtros para enviar al backend
       const backendFilters: any = {};
 
-      // Si hay búsqueda, asumir que es por nombre o apellido
-      if (search) {
-        backendFilters.first_name = search;
-      }
-
-      // Agregar filtros de EEG
       if (filters.has_eeg_records !== undefined) {
         backendFilters.has_eeg_records = filters.has_eeg_records;
       }
+
       if (filters.has_pending_eeg !== undefined) {
         backendFilters.has_pending_eeg = filters.has_pending_eeg;
       }
@@ -76,19 +70,22 @@ const PatientsTab = () => {
       const errorMessage =
         err instanceof Error ? err.message : "Error al cargar pacientes";
       setError(errorMessage);
-      console.error("Error loading patients:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const filtered = patients.filter(
-    (p) =>
-      p.first_name.toLowerCase().includes(search.toLowerCase()) ||
-      p.last_name.toLowerCase().includes(search.toLowerCase()) ||
-      p.identification_number.toLowerCase().includes(search.toLowerCase()) ||
-      p.id.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = patients.filter((p) => {
+    if (!search) return true;
+
+    const term = search.toLowerCase();
+
+    return (
+      p.first_name.toLowerCase().includes(term) ||
+      p.last_name.toLowerCase().includes(term) ||
+      p.identification_number.toLowerCase().includes(term)
+    );
+  });
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

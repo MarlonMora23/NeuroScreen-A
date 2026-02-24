@@ -15,6 +15,7 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const { notifications, dismissNotification } = useProcessing();
   const [activeTab, setActiveTab] = useState("patients");
+  const isAdmin = user?.role === "admin";
 
   const handleLogout = async () => {
     try {
@@ -71,7 +72,7 @@ const Dashboard = () => {
       {/* Main content */}
       <main className="container mx-auto px-4 pt-24 pb-12">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full max-w-2xl mx-auto grid grid-cols-3 h-auto p-1 bg-secondary/50 rounded-xl mb-8">
+          <TabsList className={`w-full max-w-2xl mx-auto grid ${isAdmin ? "grid-cols-4" : "grid-cols-3"} h-auto p-1 bg-secondary/50 rounded-xl mb-8`}>
             <TabsTrigger
               value="patients"
               className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-3 px-2 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
@@ -79,7 +80,7 @@ const Dashboard = () => {
               <Users className="w-4 h-4" />
               <span>Pacientes</span>
             </TabsTrigger>
-            {user?.role === "ADMIN" && (
+            {isAdmin && (
               <TabsTrigger
                 value="users"
                 className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-3 px-2 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
@@ -107,7 +108,7 @@ const Dashboard = () => {
           <TabsContent value="patients">
             <PatientsTab />
           </TabsContent>
-          {user?.role === "ADMIN" && (
+          {isAdmin && (
             <TabsContent value="users">
               <UsersTab />
             </TabsContent>
@@ -116,7 +117,7 @@ const Dashboard = () => {
             <UploadEEGTab />
           </TabsContent>
           <TabsContent value="classifications">
-            <ClassificationsTab />
+            <ClassificationsTab onNavigateToUpload={() => setActiveTab("upload")} />
           </TabsContent>
         </Tabs>
       </main>
