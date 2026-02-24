@@ -22,7 +22,7 @@ const HeroSection = () => {
         <EEGWave className="top-[80%]" delay={0.5} />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 py-12 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -35,7 +35,7 @@ const HeroSection = () => {
             transition={{ delay: 0.2, type: "spring" }}
             className="inline-flex items-center gap-2 glass rounded-full px-4 py-2 mb-8 text-sm text-muted-foreground"
           >
-            <Waves className="w-4 h-4 text-primary" />
+            <Waves className="w-4 h-4 y-8 text-primary" />
             Inteligencia Artificial aplicada a la Neurociencia
           </motion.div>
 

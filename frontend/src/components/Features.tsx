@@ -1,36 +1,49 @@
 import { motion } from "framer-motion";
-import { Shield, Clock, Database, LineChart, BrainCircuit, Microscope } from "lucide-react";
+import {
+  Shield,
+  Clock,
+  Database,
+  LineChart,
+  BrainCircuit,
+  Microscope,
+} from "lucide-react";
 
 const features = [
   {
     icon: BrainCircuit,
-    title: "CNN Especializada",
-    description: "Arquitectura de red neuronal optimizada para el análisis de series temporales EEG.",
+    title: "Arquitectura EEGNet",
+    description:
+      "Red neuronal diseñada específicamente para el análisis eficiente de señales electroencefalográficas.",
   },
   {
     icon: Shield,
-    title: "Alta Precisión",
-    description: "Tasa de clasificación superior al 95% validada con cross-validation.",
+    title: "Alto Desempeño",
+    description:
+      "Precisión cercana al 90% y AUC superior a 0.96 en validación independiente.",
   },
   {
     icon: Clock,
-    title: "Tiempo Real",
-    description: "Procesamiento y clasificación de señales EEG en milisegundos.",
+    title: "Inferencia Rápida",
+    description:
+      "Procesamiento completo en menos de un minuto por registro EEG.",
   },
   {
     icon: Database,
-    title: "Dataset UCI",
-    description: "Entrenado con el dataset de alcoholismo EEG de UCI Machine Learning Repository.",
+    title: "Dataset Científico",
+    description:
+      "Entrenado con 11,057 muestras provenientes de 122 sujetos del dataset EEG for Alcoholism.",
   },
   {
     icon: LineChart,
-    title: "Visualización",
-    description: "Mapas topográficos y espectrogramas de actividad cerebral en tiempo real.",
+    title: "Análisis Espacio-Temporal",
+    description:
+      "Modela simultáneamente la dimensión temporal y la distribución espacial de 34 canales EEG.",
   },
   {
     icon: Microscope,
     title: "No Invasivo",
-    description: "Técnica completamente no invasiva basada en electroencefalografía de superficie.",
+    description:
+      "Basado en electroencefalografía de superficie, técnica segura y ampliamente utilizada en investigación clínica.",
   },
 ];
 
@@ -65,7 +78,9 @@ const Features = () => {
             >
               <feature.icon className="w-8 h-8 text-primary mb-4 group-hover:scale-110 transition-transform" />
               <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {feature.description}
+              </p>
             </motion.div>
           ))}
         </div>

@@ -5,22 +5,25 @@ const steps = [
   {
     icon: Waves,
     title: "Adquisición EEG",
-    description: "Se capturan señales electroencefalográficas de 64 canales del cuero cabelludo del paciente.",
-    detail: "64 canales · 256 Hz",
+    description:
+      "Se analiza un segmento de 1 segundo de actividad cerebral capturada mediante electroencefalografía no invasiva.",
+    detail: "34 canales · 256 muestras",
     color: "primary" as const,
   },
   {
     icon: Cpu,
-    title: "Procesamiento CNN",
-    description: "La red neuronal convolucional analiza patrones espacio-temporales en las señales EEG.",
-    detail: "Conv1D · BatchNorm · Dropout",
+    title: "Análisis con IA",
+    description:
+      "Una red neuronal especializada en señales cerebrales identifica patrones espacio-temporales asociados al consumo crónico de alcohol.",
+    detail: "Arquitectura EEGNet",
     color: "accent" as const,
   },
   {
     icon: BarChart3,
-    title: "Clasificación",
-    description: "El modelo clasifica al sujeto como alcohólico o control con alta precisión diagnóstica.",
-    detail: "Precisión > 95%",
+    title: "Clasificación Clínica",
+    description:
+      "El sistema estima la probabilidad de pertenecer al grupo Control o Alcohólico con métricas validadas científicamente.",
+    detail: "AUC: 0.96+",
     color: "success" as const,
   },
 ];
@@ -45,7 +48,8 @@ const HowItWorks = () => {
             ¿Cómo <span className="text-gradient">funciona</span>?
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Un pipeline de tres etapas transforma señales cerebrales en diagnósticos precisos.
+            Un pipeline de inteligencia artificial transforma señales EEG en una
+            estimación objetiva basada en evidencia científica.
           </p>
         </motion.div>
 
@@ -60,12 +64,18 @@ const HowItWorks = () => {
               className="relative"
             >
               <div className="glass rounded-2xl p-8 h-full hover:border-primary/30 transition-colors group">
-                <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 ${colorMap[step.color]}`}>
+                <div
+                  className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 ${colorMap[step.color]}`}
+                >
                   <step.icon className="w-7 h-7" />
                 </div>
-                <div className="font-mono text-xs text-muted-foreground mb-2">PASO {i + 1}</div>
+                <div className="font-mono text-xs text-muted-foreground mb-2">
+                  PASO {i + 1}
+                </div>
                 <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed mb-4">{step.description}</p>
+                <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                  {step.description}
+                </p>
                 <div className="font-mono text-xs text-primary/80 glass rounded-lg px-3 py-2 inline-block">
                   {step.detail}
                 </div>
