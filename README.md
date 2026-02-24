@@ -16,7 +16,7 @@ docker-compose up --build
 ```
 
 Accede a:
-- **Frontend**: http://localhost:8080
+- **Frontend**: http://localhost
 - **Backend API**: http://localhost:5000
 
 ### Sin Docker
