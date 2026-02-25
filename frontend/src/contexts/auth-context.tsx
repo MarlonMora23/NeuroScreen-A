@@ -51,17 +51,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const handleUnauthorized = (event: Event) => {
       const customEvent = event as CustomEvent<string>;
 
+      window.sessionStorage.setItem(
+        "sessionExpired",
+        "Tu sesión expiró por seguridad.",
+      );
+
       authService.clearToken();
       setUser(null);
 
       // Redirección directa
       window.location.href = "/login";
     };
-
-    window.sessionStorage.setItem(
-      "sessionExpired",
-      "Tu sesión expiró por seguridad.",
-    );
 
     window.addEventListener("unauthorized", handleUnauthorized);
 
