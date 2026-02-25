@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -60,15 +60,22 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
   }
 
-  code, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+  code,
+  .font-mono {
+    font-family: "JetBrains Mono", monospace;
   }
 }
 
 @layer utilities {
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(54%) sepia(96%) saturate(500%) hue-rotate(150deg)
+      brightness(95%) contrast(90%);
+    cursor: pointer;
+  }
+  
   .glass {
     @apply bg-card/60 backdrop-blur-xl border border-border/50;
   }
@@ -98,18 +105,32 @@
   }
 
   @keyframes pulse-glow {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 1;
+    }
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
 
   @keyframes wave {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
   }
 
   .animate-pulse-glow {

@@ -87,12 +87,12 @@ const ProcessingNotification: React.FC<ProcessingNotificationProps> = ({
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             layout
-            className={`mb-3 rounded-lg border p-4 ${
+            className={`mb-3 rounded-lg border p-4 backdrop-blur-3xl ${
               item.status === "processed"
-                ? "bg-success/10 border-success/30 text-success"
+                ? "bg-success/30 border-success/30 text-success"
                 : item.status === "failed"
-                  ? "bg-destructive/10 border-destructive/30 text-destructive"
-                  : "bg-primary/10 border-primary/30 text-primary"
+                  ? "bg-destructive/30 border-destructive/30 text-destructive"
+                  : "bg-primary/30 border-primary/30 text-primary"
             }`}
           >
             <div className="flex gap-3">
@@ -124,13 +124,13 @@ const ProcessingNotification: React.FC<ProcessingNotificationProps> = ({
                 )}
               </div>
 
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {item.status === "processed" && (
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => onViewResult?.(item.id)}
-                    className="text-xs h-7 px-2"
+                    className="text-xs h-7 px-2 hover:bg-success/70 hover:text-success-foreground"
                   >
                     Ver
                   </Button>
