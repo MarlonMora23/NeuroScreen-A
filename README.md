@@ -112,7 +112,7 @@ Configurar según el ambiente (desarrollo, pruebas, producción).
 ### 1️⃣ Configurar el Entorno
 ```bash
 # En la raíz del proyecto, copia .env.example a .env
-cp frontend/.env.example .env
+cp .env.example .env
 ```
 
 ### 2️⃣ Levantar Todo con Docker (Opción Recomendada ⭐)
