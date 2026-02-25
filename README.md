@@ -1,5 +1,7 @@
 # NeuroScreen-A - Sistema de Detección Temprana de Alcoholismo
 
+<img width="1246" height="832" alt="Screenshot 2026-02-24 185555" src="https://github.com/user-attachments/assets/06627a16-71c3-439c-b027-93ad0bf6399e" />
+
 ## 📋 Descripción General
 
 NeuroScreen-A es una aplicación web full-stack para la detección temprana de alcoholismo mediante análisis de registros EEG y modelos de machine learning.
