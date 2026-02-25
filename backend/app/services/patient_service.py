@@ -1,6 +1,6 @@
 from datetime import datetime
 from app.extensions import db
-from app.models.eeg_record import EegRecord
+from app.models.eeg_record import EegRecord, EegStatus
 from app.models.patient import Patient
 from app.models.user import User, UserRole
 from sqlalchemy import func
@@ -86,29 +86,29 @@ class PatientService:
 
         # has_eeg_records (boolean)
         if filters.get("has_eeg_records") is not None:
-            if filters["has_eeg_records"] == "true":
+            if filters["has_eeg_records"] == True:
                 query = query.filter(
                     db.exists().where(EegRecord.patient_id == Patient.id)
                 )
-            elif filters["has_eeg_records"] == "false":
+            elif filters["has_eeg_records"] == False:
                 query = query.filter(
                     ~db.exists().where(EegRecord.patient_id == Patient.id)
                 )
 
         # has_pending_eeg (boolean)
         if filters.get("has_pending_eeg") is not None:
-            if filters["has_pending_eeg"] == "true":
+            if filters["has_pending_eeg"] == True:
                 query = query.filter(
                     db.exists().where(
                         (EegRecord.patient_id == Patient.id) &
-                        (EegRecord.status == EegRecord.status.PENDING)
+                        (EegRecord.status == EegStatus.PENDING)
                     )
                 )
-            elif filters["has_pending_eeg"] == "false":
+            elif filters["has_pending_eeg"] == False:
                 query = query.filter(
                     ~db.exists().where(
                         (EegRecord.patient_id == Patient.id) &
-                        (EegRecord.status == EegRecord.status.PENDING)
+                        (EegRecord.status == EegStatus.PENDING)
                     )
                 )
 

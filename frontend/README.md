@@ -58,11 +58,31 @@ src/
 
 ## 🚀 Inicio Rápido
 
-### Prerrequisitos
+### Opción 1: Docker (Recomendado ⭐)
+
+**Este es el método más simple y recomendado para ejecutar todo el proyecto:**
+
+```bash
+# Desde la raíz del proyecto
+docker-compose up --build
+```
+
+El frontend estará disponible en `http://localhost`.  
+No requiere Node.js instalado en tu máquina.
+
+Ver detalles completos en [readme.md](/readme.md).
+
+---
+
+### Opción 2: Desarrollo Local (Con hot-reload)
+
+**Usa esta opción si quieres cambios instantáneos mientras desarrollas:**
+
+#### Prerrequisitos
 - Node.js 18+
 - npm o bun
 
-### Instalación
+#### Instalación
 
 ```bash
 cd frontend
@@ -73,7 +93,7 @@ npm install
 bun install
 ```
 
-### Configuración de Variables de Entorno
+#### Configuración de Variables de Entorno
 
 Crear un archivo `.env.local` en la raíz del frontend:
 
@@ -83,24 +103,27 @@ VITE_SUPABASE_URL=tu_supabase_url
 VITE_SUPABASE_ANON_KEY=tu_supabase_key
 ```
 
-### Desarrollo
+#### Inicia el Servidor de Desarrollo
 
 ```bash
-# Iniciar servidor de desarrollo
+# Primero asegúrate que el backend esté corriendo:
+# docker-compose up db redis api worker
+
+# Luego en otra terminal:
 npm run dev
 
-# El frontend estará disponible en http://localhost:8080
+# El frontend estará disponible en http://localhost:5173
 ```
 
-### Build para Producción
+#### Build para Producción
 
 ```bash
-# Compilar para producción
-npm run build
-
-# Previsualizar build de producción
-npm run preview
+nom run build
 ```
+
+Esto genera una carpeta `dist/` lista para servir. En Docker, este paso se ejecuta automáticamente.
+
+Ver configuración completa en [readme.md](/readme.md).
 
 ## 📋 Scripts Disponibles
 

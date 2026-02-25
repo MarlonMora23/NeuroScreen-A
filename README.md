@@ -6,32 +6,6 @@ NeuroScreen-A es una aplicación web full-stack para la detección temprana de a
 
 **Estado**: ✅ Frontend y Backend totalmente integrados
 
-## 🚀 Inicio Rápido
-
-### Con Docker Compose (Recomendado)
-
-```bash
-# Desde la raíz del proyecto
-docker-compose up --build
-```
-
-Accede a:
-- **Frontend**: http://localhost
-- **Backend API**: http://localhost:5000
-
-### Sin Docker
-
-```bash
-# Terminal 1: Backend
-cd backend
-python run.py
-
-# Terminal 2: Frontend
-cd frontend
-npm install
-VITE_API_URL=http://localhost:5000 npm run dev
-```
-
 ## 📁 Estructura del Proyecto
 
 ```
@@ -129,30 +103,76 @@ Configurar según el ambiente (desarrollo, pruebas, producción).
 
 ## 📝 Primeros Pasos
 
-1. **Configura el entorno**
+### Requisitos Principales
+- Docker
+- Docker Compose
+
+### 1️⃣ Configurar el Entorno
+```bash
+# En la raíz del proyecto, copia .env.example a .env
+cp frontend/.env.example .env
+```
+
+### 2️⃣ Levantar Todo con Docker (Opción Recomendada ⭐)
+**Esta es la forma recomendada y más sencilla:**
+
+En la raíz del proyecto, ejecuta:
+```bash
+docker-compose up --build
+```
+
+Esto levanta automáticamente:
+- ✅ Backend (Flask) en `http://localhost:5000`
+- ✅ Frontend (React) en `http://localhost` (sirve a través de Nginx)
+- ✅ PostgreSQL (base de datos)
+- ✅ Redis (cache y Celery)
+- ✅ Celery Worker (procesamiento asíncronico de EEG)
+
+### 3️⃣ Accede a la Aplicación
+- **Frontend**: http://localhost
+- **Backend API**: http://localhost:5000
+
+### 4️⃣ Crear Usuario Admin (Opcional)
+```bash
+# Dentro del contenedor del backend
+docker exec neuroscreen_api python create_admin.py
+```
+
+### 5️⃣ Inicia Sesión
+- Email: usuario@ejemplo.com (o el configurado en el paso anterior)
+- Contraseña: la configurada
+
+---
+
+## 🔄 Desarrollo Local del Frontend (Alternativa)
+
+Si quieres desarrollar el frontend con **hot-reload** y cambios en tiempo real, puedes ejecutar el frontend localmente mientras mantienes Docker para backend y dependencias:
+
+### Requisitos Adicionales
+- Node.js 18+
+- npm o bun
+
+### Pasos
+
+1. **Levantar solo los servicios de backend con Docker**:
    ```bash
-   # Copia .env.example a .env
-   cp frontend/.env.example frontend/.env
+   docker-compose up db redis api worker
    ```
 
-2. **Levanta los servicios**
+2. **En otra terminal, instala dependencias del frontend**:
    ```bash
-   docker-compose up
+   cd frontend
+   npm install
    ```
 
-3. **Accede a la aplicación**
-   - Frontend: http://localhost:8080
-   - Backend: http://localhost:5000
-
-4. **Crea un usuario admin (opcional)**
+3. **Inicia el servidor de desarrollo**:
    ```bash
-   cd backend
-   python create_admin.py
+   npm run dev
    ```
+   El frontend estará disponible en `http://localhost:5173`
 
-5. **Inicia sesión**
-   - Email: usuario@ejemplo.com
-   - Contraseña: configurada en paso anterior
+**Ventajas**: Hot-reload, cambios instantáneos en desarrollo  
+**Desventajas**: Requiere Node.js instalado localmente
 
 ## 🐛 Troubleshooting
 
@@ -207,5 +227,3 @@ Para reportar bugs o sugerencias, crea un Issue en el repositorio.
 ---
 
 **Última actualización**: Febrero 2026
-
-¿Necesitas ayuda? Revisa [QUICK_START.md](./QUICK_START.md) o [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)
