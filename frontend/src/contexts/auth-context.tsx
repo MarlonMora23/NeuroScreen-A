@@ -3,7 +3,13 @@
  * Contexto global para manejar el estado de autenticación
  */
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { authService, CurrentUser } from "@/services/auth-service";
 
 interface AuthContextType {
@@ -41,6 +47,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    const handleUnauthorized = (event: Event) => {
+      const customEvent = event as CustomEvent<string>;
+
+      authService.clearToken();
+      setUser(null);
+
+      // Redirección directa
+      window.location.href = "/login";
+    };
+
+    window.sessionStorage.setItem(
+      "sessionExpired",
+      "Tu sesión expiró por seguridad.",
+    );
+
+    window.addEventListener("unauthorized", handleUnauthorized);
+
+    return () => {
+      window.removeEventListener("unauthorized", handleUnauthorized);
+    };
+  }, []);
+
   const login = async (email: string, password: string) => {
     try {
       setError(null);
@@ -53,7 +82,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(currentUser);
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Error al iniciar sesión";
+      const errorMessage =
+        err instanceof Error ? err.message : "Error al iniciar sesión";
       setError(errorMessage);
       throw err;
     }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Brain, Activity, Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
@@ -17,6 +17,16 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const message = sessionStorage.getItem("sessionExpired");
+
+    if (message) {
+      setSessionMessage(message);
+      sessionStorage.removeItem("sessionExpired");
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +37,8 @@ const Login = () => {
       await login(email, password);
       navigate("/dashboard");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Error al iniciar sesión";
+      const errorMessage =
+        err instanceof Error ? err.message : "Error al iniciar sesión";
       setError(errorMessage);
       console.error("Login error:", err);
     } finally {
@@ -71,10 +82,12 @@ const Login = () => {
           </div>
 
           {/* Error Message */}
-          {(error || authError) && (
+          {(error || authError || sessionMessage) && (
             <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error || authError}</AlertDescription>
+              <AlertDescription>
+                {sessionMessage || error || authError}
+              </AlertDescription>
             </Alert>
           )}
 
@@ -111,9 +124,13 @@ const Login = () => {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading || authLoading}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-gray-800 transition-colors disabled:opacity-50"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4 " />
+                  )}
                 </button>
               </div>
             </div>

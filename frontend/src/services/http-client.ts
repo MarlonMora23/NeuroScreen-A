@@ -45,6 +45,23 @@ class HttpClient {
       data = await response.text();
     }
 
+  // Interceptar 401 globalmente
+  if (response.status === 401) {
+    window.dispatchEvent(
+      new CustomEvent("unauthorized", {
+        detail: data?.error || "Session expired",
+      })
+    );
+
+    const error: HttpError = {
+      status: 401,
+      message: data?.error || "Unauthorized",
+      data,
+    };
+
+    throw error;
+  }
+
     if (!response.ok) {
       const error: HttpError = {
         status: response.status,
