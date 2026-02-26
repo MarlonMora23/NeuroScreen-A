@@ -54,14 +54,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       authService.clearToken();
       setUser(null);
 
+      window.sessionStorage.setItem(
+        "sessionExpired",
+        "Tu sesión expiró por seguridad.",
+      );
+
       // Redirección directa
       window.location.href = "/login";
     };
-
-    window.sessionStorage.setItem(
-      "sessionExpired",
-      "Tu sesión expiró por seguridad.",
-    );
 
     window.addEventListener("unauthorized", handleUnauthorized);
 
