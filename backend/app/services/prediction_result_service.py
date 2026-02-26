@@ -101,3 +101,36 @@ class PredictionResultService:
             "model_version": prediction.model_version,
             "created_at": prediction.created_at.isoformat(),
         }
+
+    @staticmethod
+    def get_by_id(prediction_id: int, current_user: User) -> dict:
+        prediction = db.session.get(PredictionResult, prediction_id)
+        if not prediction or prediction.is_deleted:
+            raise ValueError("Prediction not found")
+
+        eeg = db.session.get(EegRecord, prediction.eeg_record_id)
+        if not eeg or eeg.is_deleted:
+            raise ValueError("Associated EEG record not found")
+
+        if (
+            current_user.role != UserRole.ADMIN
+            and eeg.uploader_id != current_user.id
+        ):
+            raise PermissionError("Not allowed to access this prediction")
+
+        return PredictionResultService._to_dict(prediction)
+
+    @staticmethod
+    def delete_prediction(prediction_id: int, current_user: User) -> dict:
+        prediction = db.session.get(PredictionResult, prediction_id)
+        if not prediction or prediction.is_deleted:
+            raise ValueError("Prediction not found")
+
+        # Only ADMIN can delete predictions
+        if current_user.role != UserRole.ADMIN:
+            raise PermissionError("Only ADMIN can delete predictions")
+
+        prediction.soft_delete()
+        db.session.commit()
+
+        return PredictionResultService._to_dict(prediction)

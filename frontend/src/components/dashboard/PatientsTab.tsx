@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, User, Loader, AlertCircle } from "lucide-react";
+import { Plus, Search, User, Loader, AlertCircle, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -25,6 +34,8 @@ import {
   Patient,
   CreatePatientRequest,
 } from "@/services/patient-service";
+import { useAuth } from "@/contexts/auth-context";
+import { extractError } from "@/lib/utils";
 
 const PatientsTab = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -43,6 +54,9 @@ const PatientsTab = () => {
     last_name: "",
     birth_date: "",
   });
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const { user } = useAuth();
 
   // Cargar pacientes solo cuando cambian los filtros o se hace búsqueda
   useEffect(() => {
@@ -300,6 +314,34 @@ const PatientsTab = () => {
           </div>
         </div>
       </div>
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="glass border-border/50">
+          <DialogHeader>
+            <DialogTitle>Detalles del paciente</DialogTitle>
+          </DialogHeader>
+          {selectedPatient ? (
+            <div className="space-y-2 pt-2">
+              <div>
+                <strong>ID:</strong> {selectedPatient.id}
+              </div>
+              <div>
+                <strong>Identificación:</strong> {selectedPatient.identification_number}
+              </div>
+              <div>
+                <strong>Nombre:</strong> {selectedPatient.first_name} {selectedPatient.last_name}
+              </div>
+              <div>
+                <strong>Fecha de nacimiento:</strong> {selectedPatient.birth_date || "-"}
+              </div>
+              <div>
+                <strong>Creado por:</strong> {selectedPatient.created_by}
+              </div>
+            </div>
+          ) : (
+            <div className="py-6 text-center">Cargando...</div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Table */}
       <div className="glass rounded-xl overflow-hidden">
@@ -314,6 +356,7 @@ const PatientsTab = () => {
                 <TableHead>ID</TableHead>
                 <TableHead>Identificación</TableHead>
                 <TableHead>Nombre</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
                 <TableHead className="hidden sm:table-cell">Apellido</TableHead>
                 <TableHead className="hidden md:table-cell">
                   Nacimiento
@@ -337,6 +380,56 @@ const PatientsTab = () => {
                     {p.birth_date
                       ? new Date(p.birth_date).toLocaleDateString()
                       : "-"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end items-center gap-2">
+                        <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const data = await patientService.getPatient(String(p.id));
+                            setSelectedPatient(data);
+                            setDetailsOpen(true);
+                          } catch (err) {
+                            setError(extractError(err));
+                          }
+                        }}
+                        title="Ver detalles"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+
+                      {(user?.role === "admin" || user?.id === p.created_by) && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" title="Eliminar">
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="glass border-border/50">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+                            </AlertDialogHeader>
+                            <div className="mt-4 text-right space-x-2">
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={async () => {
+                                  try {
+                                    await patientService.deletePatient(String(p.id));
+                                    await loadPatients();
+                                  } catch (err) {
+                                    setError(extractError(err));
+                                  }
+                                }}
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </div>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

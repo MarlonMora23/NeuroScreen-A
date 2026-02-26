@@ -1,16 +1,15 @@
-FROM oven/bun:latest AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Accept build arguments from docker-compose
 ARG VITE_API_URL=http://localhost:5000
 ENV VITE_API_URL=$VITE_API_URL
 
-COPY package.json bun.lockb ./
-RUN bun install
+COPY package.json package-lock.json ./
+RUN npm install
 
 COPY . .
-RUN bun run build
+RUN npm run build
 
 FROM nginx:alpine
 

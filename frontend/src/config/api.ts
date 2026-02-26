@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
 
   // Predictions
   PREDICTIONS: "/api/predictions",
+  PREDICTION_BY_ID: (id: string) => `/api/predictions/${id}`,
 };
 
 // Token storage

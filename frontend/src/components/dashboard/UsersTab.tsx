@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Shield, ShieldCheck, AlertCircle, Loader } from "lucide-react";
+import { Plus, Search, Shield, ShieldCheck, AlertCircle, Loader, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { userService, AppUser, CreateUserRequest } from "@/services/user-service";
+import { useAuth } from "@/contexts/auth-context";
+import { extractError } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const UsersTab = () => {
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -37,6 +48,9 @@ const UsersTab = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const { user } = useAuth();
   const [newUser, setNewUser] = useState<CreateUserRequest>({
     first_name: "",
     last_name: "",
@@ -220,6 +234,34 @@ const UsersTab = () => {
           </DialogContent>
         </Dialog>
       </div>
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="glass border-border/50">
+          <DialogHeader>
+            <DialogTitle>Detalles del usuario</DialogTitle>
+          </DialogHeader>
+          {selectedUser ? (
+            <div className="space-y-2 pt-2">
+              <div>
+                <strong>ID:</strong> {selectedUser.id}
+              </div>
+              <div>
+                <strong>Nombre:</strong> {selectedUser.first_name} {selectedUser.last_name}
+              </div>
+              <div>
+                <strong>Email:</strong> {selectedUser.email}
+              </div>
+              <div>
+                <strong>Rol:</strong> {selectedUser.role}
+              </div>
+              <div>
+                <strong>Creado:</strong> {selectedUser.created_at || "-"}
+              </div>
+            </div>
+          ) : (
+            <div className="py-6 text-center">Cargando...</div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="glass rounded-xl overflow-hidden">
         {loading ? (
@@ -232,6 +274,7 @@ const UsersTab = () => {
               <TableRow className="border-border/30 hover:bg-transparent">
                 <TableHead>ID</TableHead>
                 <TableHead>Nombre</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
                 <TableHead className="hidden sm:table-cell">Email</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead className="hidden md:table-cell">Registro</TableHead>
@@ -243,6 +286,56 @@ const UsersTab = () => {
                   <TableCell className="font-mono text-primary text-sm">{u.id}</TableCell>
                   <TableCell className="font-medium">
                     {u.first_name} {u.last_name}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const data = await userService.getUser(String(u.id));
+                          setSelectedUser(data);
+                          setDetailsOpen(true);
+                        } catch (err) {
+                          setError(extractError(err));
+                        }
+                      }}
+                      title="Ver detalles"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+
+                      {user?.role === "admin" && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="glass border-border/50">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+                            </AlertDialogHeader>
+                            <div className="mt-4 text-right space-x-2">
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={async () => {
+                                  try {
+                                    await userService.deleteUser(String(u.id));
+                                    await loadUsers();
+                                  } catch (err) {
+                                    setError(extractError(err));
+                                  }
+                                }}
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </div>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
                     {u.email}

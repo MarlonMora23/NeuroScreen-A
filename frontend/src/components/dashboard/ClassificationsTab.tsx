@@ -23,6 +23,19 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { eegService, PredictionResult } from "@/services/eeg-service";
+import { extractError } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
+import { Eye, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface ClassificationsTabProps {
   onNavigateToUpload?: () => void;
@@ -38,6 +51,9 @@ const ClassificationsTab = ({
   const [filters, setFilters] = useState({
     prediction_result: undefined as "alcoholic" | "non_alcoholic" | undefined,
   });
+  const [selected, setSelected] = useState<PredictionResult | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const { user } = useAuth();
 
   // Cargar predicciones
   useEffect(() => {
@@ -146,6 +162,34 @@ const ClassificationsTab = ({
           </Button>
         </div>
       </div>
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="glass border-border/50">
+          <DialogHeader>
+            <DialogTitle>Detalles de la predicción</DialogTitle>
+          </DialogHeader>
+          {selected ? (
+            <div className="space-y-2 pt-2">
+              <div>
+                <strong>ID:</strong> {selected.id}
+              </div>
+              <div>
+                <strong>EEG ID:</strong> {selected.eeg_record_id}
+              </div>
+              <div>
+                <strong>Resultado:</strong> {selected.result}
+              </div>
+              <div>
+                <strong>Confianza:</strong> {(selected.confidence * 100).toFixed(1)}%
+              </div>
+              <div>
+                <strong>Modelo:</strong> {selected.model_version}
+              </div>
+            </div>
+          ) : (
+            <div className="py-6 text-center">Cargando...</div>
+          )}
+        </DialogContent>
+      </Dialog>
       
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -179,6 +223,7 @@ const ClassificationsTab = ({
                 <TableHead>ID Predicción</TableHead>
                 <TableHead>Registro EEG</TableHead>
                 <TableHead>Resultado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
                 <TableHead className="hidden sm:table-cell">
                   Confianza
                 </TableHead>
@@ -233,6 +278,57 @@ const ClassificationsTab = ({
                     {c.created_at
                       ? new Date(c.created_at).toLocaleDateString()
                       : "-"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end items-center gap-2">
+                        <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const data = await eegService.getPredictionById(String(c.id));
+                            setSelected(data);
+                            setDetailsOpen(true);
+                          } catch (err) {
+                            setError(extractError(err));
+                          }
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+
+                      {user?.role === "admin" && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="glass border-border/50">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+                            </AlertDialogHeader>
+                              <div className="mt-4 text-right space-x-2">
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={async () => {
+                                    try {
+                                      await eegService.deletePrediction(String(c.id));
+                                      await loadPredictions();
+                                    } catch (err) {
+                                      // better error extraction
+                                      const { extractError } = await import("@/lib/utils");
+                                      setError(extractError(err));
+                                    }
+                                  }}
+                                >
+                                  Eliminar
+                                </AlertDialogAction>
+                              </div>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

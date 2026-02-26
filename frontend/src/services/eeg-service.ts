@@ -129,6 +129,14 @@ class EEGService {
     return httpClient.get<PredictionResult[]>(API_ENDPOINTS.PREDICTIONS);
   }
 
+  async getPredictionById(id: string): Promise<PredictionResult> {
+    return httpClient.get<PredictionResult>(API_ENDPOINTS.PREDICTION_BY_ID(id));
+  }
+
+  async deletePrediction(id: string): Promise<void> {
+    await httpClient.delete(API_ENDPOINTS.PREDICTION_BY_ID(id));
+  }
+
   /**
    * Poll the status of an EEG record with a callback for updates
    * @param eegRecordId - The ID of the EEG record to monitor

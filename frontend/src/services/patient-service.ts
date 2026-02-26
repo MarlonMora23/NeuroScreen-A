@@ -11,6 +11,7 @@ export interface Patient {
   identification_number: string;
   first_name: string;
   last_name: string;
+  created_by?: string;
   birth_date?: string;
   created_at?: string;
 }

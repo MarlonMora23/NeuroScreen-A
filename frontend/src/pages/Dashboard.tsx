@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Brain, Activity, Users, UserPlus, Upload, BarChart3, LogOut } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
+import { useTheme } from "@/contexts/theme-context";
+import { Sun, Moon } from "lucide-react";
 import { useProcessing } from "@/contexts/processing-context";
 import PatientsTab from "@/components/dashboard/PatientsTab";
 import UsersTab from "@/components/dashboard/UsersTab";
@@ -16,6 +18,7 @@ const Dashboard = () => {
   const { notifications, dismissNotification } = useProcessing();
   const [activeTab, setActiveTab] = useState("patients");
   const isAdmin = user?.role === "admin";
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     try {
@@ -58,6 +61,17 @@ const Dashboard = () => {
                 </span>
               </div>
             )}
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="p-2 rounded-md hover:bg-muted/10 transition-colors"
+            >
+              {theme === "dark" ? (
+                <Sun className="w-5 h-5" />
+              ) : (
+                <Moon className="w-5 h-5" />
+              )}
+            </button>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"

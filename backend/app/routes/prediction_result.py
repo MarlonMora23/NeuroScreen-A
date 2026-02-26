@@ -65,3 +65,41 @@ def list_all_predictions():
     except Exception as e:
         current_app.logger.exception(e)
         return jsonify({"error": "Internal server error"}), 500
+
+
+@predictions_bp.route("/predictions/<int:prediction_id>", methods=["GET"])
+@jwt_required()
+def get_prediction(prediction_id):
+    """
+    Details of a specific prediction by its id.
+    """
+    try:
+        current_user = get_current_user()
+        prediction = PredictionResultService.get_by_id(prediction_id, current_user)
+        return jsonify(prediction), 200
+    except PermissionError as e:
+        return jsonify({"error": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@predictions_bp.route("/predictions/<int:prediction_id>", methods=["DELETE"])
+@jwt_required()
+def delete_prediction(prediction_id):
+    """
+    ADMIN only: delete a prediction (soft delete).
+    """
+    try:
+        current_user = get_current_user()
+        prediction = PredictionResultService.delete_prediction(prediction_id, current_user)
+        return jsonify({"message": f"Prediction {prediction['id']} deleted"}), 200
+    except PermissionError as e:
+        return jsonify({"error": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
