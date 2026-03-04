@@ -2,11 +2,13 @@ from flask import Blueprint, current_app, jsonify
 from flask_jwt_extended import jwt_required
 from app.utils.security import get_current_user
 from app.services.prediction_result_service import PredictionResultService
+from app.extensions import limiter
 
 predictions_bp = Blueprint("predictions", __name__)
 
 
 @predictions_bp.route("/eeg-records/<uuid:eeg_record_id>/prediction", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def get_prediction_by_eeg(eeg_record_id):
     """
@@ -29,6 +31,7 @@ def get_prediction_by_eeg(eeg_record_id):
 
 
 @predictions_bp.route("/patients/<uuid:patient_id>/predictions", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def list_predictions_by_patient(patient_id):
     """
@@ -51,6 +54,7 @@ def list_predictions_by_patient(patient_id):
 
 
 @predictions_bp.route("/predictions", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def list_all_predictions():
     """
@@ -68,6 +72,7 @@ def list_all_predictions():
 
 
 @predictions_bp.route("/predictions/<uuid:prediction_id>", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def get_prediction(prediction_id):
     """
@@ -87,6 +92,7 @@ def get_prediction(prediction_id):
 
 
 @predictions_bp.route("/predictions/<uuid:prediction_id>", methods=["DELETE"])
+@limiter.limit("50 per hour")
 @jwt_required()
 def delete_prediction(prediction_id):
     """

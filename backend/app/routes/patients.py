@@ -2,11 +2,13 @@ from flask import Blueprint, current_app, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.utils.security import get_current_user
 from app.services.patient_service import PatientService
+from app.extensions import limiter
 
 patients_bp = Blueprint("patients", __name__)
 
 
 @patients_bp.route("/patients", methods=["POST"])
+@limiter.limit("100 per hour")
 @jwt_required()
 def create_patient():
     data = request.get_json() or {}
@@ -25,6 +27,7 @@ def create_patient():
 
 
 @patients_bp.route("/patients", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def list_patients():
     try:
@@ -55,6 +58,7 @@ def list_patients():
 
 
 @patients_bp.route("/patients/<uuid:patient_id>", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def get_patient(patient_id):
     try:
@@ -71,6 +75,7 @@ def get_patient(patient_id):
 
 
 @patients_bp.route("/patients/<uuid:patient_id>", methods=["PUT"])
+@limiter.limit("50 per hour")
 @jwt_required()
 def update_patient(patient_id):
     data = request.get_json() or {}
@@ -91,6 +96,7 @@ def update_patient(patient_id):
 
 
 @patients_bp.route("/patients/<uuid:patient_id>", methods=["DELETE"])
+@limiter.limit("50 per hour")
 @jwt_required()
 def delete_patient(patient_id):
     try:

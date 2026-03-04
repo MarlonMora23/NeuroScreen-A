@@ -1,11 +1,13 @@
 from flask import Blueprint, current_app, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from app.services.auth_service import AuthService
+from app.extensions import limiter
 
 auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.route("/auth/login", methods=["POST"])
+@limiter.limit("5 per minute; 20 per hour")
 def login():
     data = request.get_json() or {}
     try:
@@ -31,6 +33,7 @@ def logout():
 
 
 @auth_bp.route("/auth/me", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def me():
     from app.utils.security import get_current_user

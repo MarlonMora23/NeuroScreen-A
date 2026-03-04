@@ -3,10 +3,12 @@ from flask_jwt_extended import jwt_required
 from app.services.eeg_record_service import EegRecordService
 from app.utils.security import get_current_user
 from app.tasks.eeg_tasks import process_eeg_record
+from app.extensions import limiter
 
 eeg_records_bp = Blueprint("eeg_records", __name__)
 
 @eeg_records_bp.route("/eeg-records/upload", methods=["POST"])
+@limiter.limit("10 per minute")
 @jwt_required()
 def upload_eeg():
     try:
@@ -24,7 +26,7 @@ def upload_eeg():
         record = EegRecordService.create_eeg_record(file, patient_id, current_user)
 
         # Enqueue background task passing the record ID
-        process_eeg_record.delay(record["id"])
+        process_eeg_record.delay(record["id"]) # type: ignore
 
         return jsonify(record), 202
 
@@ -37,6 +39,7 @@ def upload_eeg():
         return jsonify({"error": "Internal server error"}), 500
 
 @eeg_records_bp.route("/eeg-records", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def list_eeg_records():
     try:
@@ -56,6 +59,7 @@ def list_eeg_records():
         return jsonify({"error": "Internal server error"}), 500
 
 @eeg_records_bp.route("/eeg-records/<uuid:eeg_id>", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def get_eeg_record(eeg_id):
     try:
@@ -71,6 +75,7 @@ def get_eeg_record(eeg_id):
         return jsonify({"error": "Internal server error"}), 500
 
 @eeg_records_bp.route("/patients/<uuid:patient_id>/eeg-records", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def list_by_patient(patient_id):
     try:
@@ -86,6 +91,7 @@ def list_by_patient(patient_id):
         return jsonify({"error": "Internal server error"}), 500
     
 @eeg_records_bp.route("/eeg-records/<uuid:eeg_id>/status", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def get_eeg_status(eeg_id):
     try:
@@ -101,6 +107,7 @@ def get_eeg_status(eeg_id):
         return jsonify({"error": "Internal server error"}), 500
     
 @eeg_records_bp.route("/eeg-records/<uuid:eeg_id>", methods=["DELETE"])
+@limiter.limit("50 per hour")
 @jwt_required()
 def delete_eeg_record(eeg_id):
     try:

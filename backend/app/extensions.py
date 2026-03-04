@@ -1,7 +1,13 @@
+import os
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from celery import Celery
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from dotenv import load_dotenv
+
+load_dotenv()
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -23,3 +29,9 @@ def expired_token_callback(jwt_header, jwt_payload):
 @jwt.revoked_token_loader
 def revoked_token_callback(jwt_header, jwt_payload):
     return {"message": "Token revoked"}, 401
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=os.getenv("REDIS_URL"),
+)

@@ -2,10 +2,12 @@ from flask import Blueprint, current_app, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.services.user_service import UserService
 from app.utils.security import get_current_user
+from app.extensions import limiter
 
 users_bp = Blueprint("users", __name__)
 
 @users_bp.route("/users", methods=["POST"])
+@limiter.limit("100 per hour")
 @jwt_required()
 def create_user():
     data = request.get_json() or {}
@@ -24,6 +26,7 @@ def create_user():
 
 
 @users_bp.route("/users", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def list_users():
     try:
@@ -38,6 +41,7 @@ def list_users():
 
 
 @users_bp.route("/users/<uuid:user_id>", methods=["GET"])
+@limiter.limit("100 per minute")
 @jwt_required()
 def get_user(user_id):
     try:
@@ -54,6 +58,7 @@ def get_user(user_id):
 
     
 @users_bp.route("/users/<uuid:user_id>", methods=["PUT"])
+@limiter.limit("50 per hour")
 @jwt_required()
 def update_user(user_id):
     data = request.get_json() or {}
@@ -72,6 +77,7 @@ def update_user(user_id):
 
 
 @users_bp.route("/users/<uuid:user_id>", methods=["DELETE"])
+@limiter.limit("50 per hour")
 @jwt_required()
 def delete_user(user_id):
     try:

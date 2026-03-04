@@ -1,7 +1,8 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_limiter.errors import RateLimitExceeded
 from .config import Config, TestingConfig
-from .extensions import db, migrate, jwt
+from .extensions import db, migrate, jwt, limiter
 from app.models.user import User
 from app.celery_app import create_celery
 from app.utils.security import register_jwt_callbacks
@@ -24,6 +25,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+    limiter.init_app(app)
 
     # Config JWT serializer
     @jwt.user_identity_loader
@@ -40,10 +42,17 @@ def create_app(config_class=Config):
             user_id = identity
         return db.session.get(User, user_id)
     
+    @app.errorhandler(RateLimitExceeded)
+    def handle_rate_limit(e):
+        return jsonify({
+            "error": "Too many requests",
+            "message": "Rate limit exceeded. Please try again later."
+        }), 429
+    
     register_jwt_callbacks(app)
     
     celery = create_celery(app)
-    app.celery = celery
+    app.celery = celery # type: ignore
 
     from app import models
     from app.routes import api_bp
