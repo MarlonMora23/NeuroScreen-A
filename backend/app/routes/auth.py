@@ -47,3 +47,36 @@ def me():
     except Exception as e:
         current_app.logger.exception(e)
         return jsonify({"error": "Internal server error"}), 500
+
+
+
+
+@auth_bp.route("/auth/forgot-password", methods=["POST"])
+def forgot_password():
+    data = request.get_json() or {}
+    try:
+        email = data.get("email", "")
+        token = AuthService.create_password_reset_token(email)
+        # In production you'd send the token via email. For now return a generic message and token if created.
+        resp = {"message": "If the email exists, a reset link was generated."}
+        if token:
+            resp["token"] = token
+        return jsonify(resp), 200
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@auth_bp.route("/auth/reset-password", methods=["POST"])
+def reset_password():
+    data = request.get_json() or {}
+    try:
+        token = data.get("token", "")
+        new_password = data.get("password", "")
+        AuthService.reset_password(token, new_password)
+        return jsonify({"message": "Password updated successfully"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500

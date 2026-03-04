@@ -11,6 +11,7 @@ import UsersTab from "@/components/dashboard/UsersTab";
 import UploadEEGTab from "@/components/dashboard/UploadEEGTab";
 import ClassificationsTab from "@/components/dashboard/ClassificationsTab";
 import ProcessingNotification from "@/components/ProcessingNotification";
+import UserEmailMenu from "@/components/UserEmailMenu";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-4">
             {user && (
               <div className="hidden sm:flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">{user.email}</span>
+                <UserEmailMenu email={user.email} userId={user.id} />
                 <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary capitalize">
                   {user.role}
                 </span>

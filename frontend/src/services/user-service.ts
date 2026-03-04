@@ -25,6 +25,7 @@ export interface CreateUserRequest {
 
 export interface UpdateUserRequest extends Partial<Omit<CreateUserRequest, "password">> {
   password?: string;
+  current_password?: string; // used when updating sensitive fields like email
 }
 
 class UserService {
