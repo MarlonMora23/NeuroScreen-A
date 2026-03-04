@@ -1,8 +1,8 @@
-"""initial migration
+"""initial with uuid
 
-Revision ID: f9d3af8de99b
+Revision ID: 6de69576e9d1
 Revises: 
-Create Date: 2026-02-20 21:10:16.457741
+Create Date: 2026-03-03 19:12:24.346300
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'f9d3af8de99b'
+revision = '6de69576e9d1'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -27,7 +27,7 @@ def upgrade():
     sa.Column('last_login', sa.DateTime(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -40,10 +40,10 @@ def upgrade():
     sa.Column('first_name', sa.String(length=120), nullable=False),
     sa.Column('last_name', sa.String(length=120), nullable=False),
     sa.Column('birth_date', sa.Date(), nullable=True),
-    sa.Column('created_by', sa.Integer(), nullable=False),
+    sa.Column('created_by', sa.UUID(), nullable=False),
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
@@ -53,12 +53,12 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_patients_identification_number'), ['identification_number'], unique=True)
 
     op.create_table('sessions',
-    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('token', sa.String(length=500), nullable=False),
     sa.Column('start_date', sa.DateTime(), nullable=False),
     sa.Column('expiration_date', sa.DateTime(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
@@ -68,8 +68,8 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_sessions_token'), ['token'], unique=True)
 
     op.create_table('eeg_records',
-    sa.Column('patient_id', sa.Integer(), nullable=False),
-    sa.Column('uploader_id', sa.Integer(), nullable=False),
+    sa.Column('patient_id', sa.UUID(), nullable=False),
+    sa.Column('uploader_id', sa.UUID(), nullable=False),
     sa.Column('file_name', sa.String(length=120), nullable=False),
     sa.Column('file_path', sa.String(length=500), nullable=False),
     sa.Column('file_type', sa.Enum('PARQUET', 'CSV', 'JSON', 'EDF', name='file_type'), nullable=False),
@@ -79,7 +79,7 @@ def upgrade():
     sa.Column('processing_time_ms', sa.Integer(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['patient_id'], ['patients.id'], ),
@@ -90,14 +90,14 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_eeg_records_patient_id'), ['patient_id'], unique=False)
 
     op.create_table('prediction_results',
-    sa.Column('eeg_record_id', sa.Integer(), nullable=False),
+    sa.Column('eeg_record_id', sa.UUID(), nullable=False),
     sa.Column('result', sa.Enum('ALCOHOLIC', 'NON_ALCOHOLIC', name='alcoholismrisk'), nullable=False),
     sa.Column('confidence', sa.Numeric(precision=5, scale=4), nullable=False),
     sa.Column('raw_probability', sa.Numeric(precision=5, scale=4), nullable=True),
     sa.Column('model_version', sa.String(length=120), nullable=False),
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['eeg_record_id'], ['eeg_records.id'], ),

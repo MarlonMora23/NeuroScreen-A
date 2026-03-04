@@ -17,6 +17,8 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const { notifications, dismissNotification } = useProcessing();
   const [activeTab, setActiveTab] = useState("patients");
+  // incrementing counter used to signal child components to refresh data
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const isAdmin = user?.role === "admin";
   const { theme, toggleTheme } = useTheme();
 
@@ -38,6 +40,11 @@ const Dashboard = () => {
         onViewResult={(id) => {
           // Navigate to classifications tab to view the result
           setActiveTab("classifications");
+        }}
+        onProcessed={() => {
+          // whenever a prediction finishes processing we bump the counter
+          // which will be observed by ClassificationsTab to reload data
+          setRefreshTrigger((prev) => prev + 1);
         }}
       />
       {/* Top bar */}
@@ -131,7 +138,10 @@ const Dashboard = () => {
             <UploadEEGTab />
           </TabsContent>
           <TabsContent value="classifications">
-            <ClassificationsTab onNavigateToUpload={() => setActiveTab("upload")} />
+            <ClassificationsTab
+              onNavigateToUpload={() => setActiveTab("upload")}
+              refreshSignal={refreshTrigger}
+            />
           </TabsContent>
         </Tabs>
       </main>

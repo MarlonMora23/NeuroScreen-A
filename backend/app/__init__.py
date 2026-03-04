@@ -33,7 +33,12 @@ def create_app(config_class=Config):
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
         identity = jwt_data["sub"]
-        return db.session.get(User, int(identity))
+        try:
+            from uuid import UUID
+            user_id = UUID(identity)
+        except Exception:
+            user_id = identity
+        return db.session.get(User, user_id)
     
     register_jwt_callbacks(app)
     

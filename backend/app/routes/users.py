@@ -37,7 +37,7 @@ def list_users():
         return jsonify({"error": "Internal server error"}), 500
 
 
-@users_bp.route("/users/<int:user_id>", methods=["GET"])
+@users_bp.route("/users/<uuid:user_id>", methods=["GET"])
 @jwt_required()
 def get_user(user_id):
     try:
@@ -53,7 +53,7 @@ def get_user(user_id):
         return jsonify({"error": "Internal server error"}), 500
 
     
-@users_bp.route("/users/<int:user_id>", methods=["PUT"])
+@users_bp.route("/users/<uuid:user_id>", methods=["PUT"])
 @jwt_required()
 def update_user(user_id):
     data = request.get_json() or {}
@@ -71,7 +71,7 @@ def update_user(user_id):
         return jsonify({"error": "Internal server error"}), 500
 
 
-@users_bp.route("/users/<int:user_id>", methods=["DELETE"])
+@users_bp.route("/users/<uuid:user_id>", methods=["DELETE"])
 @jwt_required()
 def delete_user(user_id):
     try:

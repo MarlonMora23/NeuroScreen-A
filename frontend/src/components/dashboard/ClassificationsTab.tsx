@@ -39,10 +39,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 interface ClassificationsTabProps {
   onNavigateToUpload?: () => void;
+  /**
+   * Changing this value causes the tab to reload its predictions from the API.
+   * Dashboard will bump the counter whenever background processing finishes.
+   */
+  refreshSignal?: number;
 }
 
 const ClassificationsTab = ({
   onNavigateToUpload,
+  refreshSignal,
 }: ClassificationsTabProps) => {
   const [predictions, setPredictions] = useState<PredictionResult[]>([]);
   const [search, setSearch] = useState("");
@@ -59,6 +65,13 @@ const ClassificationsTab = ({
   useEffect(() => {
     loadPredictions();
   }, []);
+
+  // reload whenever parent signals new data is available
+  useEffect(() => {
+    if (refreshSignal !== undefined) {
+      loadPredictions();
+    }
+  }, [refreshSignal]);
 
   const loadPredictions = async () => {
     try {

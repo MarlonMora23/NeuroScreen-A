@@ -21,11 +21,6 @@ def upload_eeg():
         if not patient_id:
             return jsonify({"error": "patient_id is required"}), 400
 
-        try:
-            patient_id = int(patient_id)
-        except ValueError:
-            return jsonify({"error": "patient_id must be an integer"}), 400
-
         record = EegRecordService.create_eeg_record(file, patient_id, current_user)
 
         # Enqueue background task passing the record ID
@@ -60,7 +55,7 @@ def list_eeg_records():
         current_app.logger.exception(e)
         return jsonify({"error": "Internal server error"}), 500
 
-@eeg_records_bp.route("/eeg-records/<int:eeg_id>", methods=["GET"])
+@eeg_records_bp.route("/eeg-records/<uuid:eeg_id>", methods=["GET"])
 @jwt_required()
 def get_eeg_record(eeg_id):
     try:
@@ -75,7 +70,7 @@ def get_eeg_record(eeg_id):
         current_app.logger.exception(e)
         return jsonify({"error": "Internal server error"}), 500
 
-@eeg_records_bp.route("/patients/<int:patient_id>/eeg-records", methods=["GET"])
+@eeg_records_bp.route("/patients/<uuid:patient_id>/eeg-records", methods=["GET"])
 @jwt_required()
 def list_by_patient(patient_id):
     try:
@@ -90,7 +85,7 @@ def list_by_patient(patient_id):
         current_app.logger.exception(e)
         return jsonify({"error": "Internal server error"}), 500
     
-@eeg_records_bp.route("/eeg-records/<int:eeg_id>/status", methods=["GET"])
+@eeg_records_bp.route("/eeg-records/<uuid:eeg_id>/status", methods=["GET"])
 @jwt_required()
 def get_eeg_status(eeg_id):
     try:
@@ -105,7 +100,7 @@ def get_eeg_status(eeg_id):
         current_app.logger.exception(e)
         return jsonify({"error": "Internal server error"}), 500
     
-@eeg_records_bp.route("/eeg-records/<int:eeg_id>", methods=["DELETE"])
+@eeg_records_bp.route("/eeg-records/<uuid:eeg_id>", methods=["DELETE"])
 @jwt_required()
 def delete_eeg_record(eeg_id):
     try:

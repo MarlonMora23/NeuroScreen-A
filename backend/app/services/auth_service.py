@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+from uuid import UUID
 from werkzeug.security import check_password_hash
 from flask_jwt_extended import create_access_token
 from app.models.user import User
@@ -29,7 +30,7 @@ class AuthService:
         now = datetime.now(timezone.utc)
         expiration = now + timedelta(minutes=SESSION_DURATION_MINUTES)
 
-        token = create_access_token(identity=user.id)
+        token = create_access_token(identity=str(user.id))
 
         session = Session(
             user_id=user.id,
@@ -48,7 +49,7 @@ class AuthService:
             "access_token": token,
             "expires_in": SESSION_DURATION_MINUTES * 60,
             "user": {
-                "id": user.id,
+                "id": str(user.id),
                 "email": user.email,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
@@ -96,9 +97,13 @@ class AuthService:
             db.session.commit()
 
     @staticmethod
-    def _invalidate_existing_session(user_id: int) -> None:
+    def _invalidate_existing_session(user_id: str) -> None:
+        try:
+            user_uuid = UUID(str(user_id))
+        except Exception:
+            return
         Session.query.filter_by(
-            user_id=user_id,
+            user_id=user_uuid,
             is_active=True
         ).update({"is_active": False})
         db.session.commit()

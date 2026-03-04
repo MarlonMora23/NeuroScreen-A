@@ -1,4 +1,5 @@
 from app.extensions import db
+from uuid import UUID
 from app.models.prediction_result import PredictionResult
 from app.models.eeg_record import EegRecord, EegStatus
 from app.models.patient import Patient
@@ -8,8 +9,12 @@ from app.models.user import User, UserRole
 class PredictionResultService:
 
     @staticmethod
-    def get_by_eeg_record(eeg_record_id: int, current_user: User) -> dict:
-        eeg = db.session.get(EegRecord, eeg_record_id)
+    def get_by_eeg_record(eeg_record_id: str, current_user: User) -> dict:
+        try:
+            eeg_uuid = UUID(str(eeg_record_id))
+        except Exception:
+            raise ValueError("EEG record not found")
+        eeg = db.session.get(EegRecord, eeg_uuid)
         if not eeg or eeg.is_deleted:
             raise ValueError("EEG record not found")
 
@@ -36,8 +41,12 @@ class PredictionResultService:
         return PredictionResultService._to_dict(prediction)
 
     @staticmethod
-    def list_by_patient(patient_id: int, current_user: User) -> list:
-        patient = db.session.get(Patient, patient_id)
+    def list_by_patient(patient_id: str, current_user: User) -> list:
+        try:
+            patient_uuid = UUID(str(patient_id))
+        except Exception:
+            raise ValueError("Patient not found")
+        patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
             raise ValueError("Patient not found")
 
@@ -90,8 +99,8 @@ class PredictionResultService:
     @staticmethod
     def _to_dict(prediction: PredictionResult) -> dict:
         return {
-            "id": prediction.id,
-            "eeg_record_id": prediction.eeg_record_id,
+            "id": str(prediction.id),
+            "eeg_record_id": str(prediction.eeg_record_id),
             "result": prediction.result.value,
             "confidence": float(prediction.confidence),
             "raw_probability": (
@@ -103,8 +112,12 @@ class PredictionResultService:
         }
 
     @staticmethod
-    def get_by_id(prediction_id: int, current_user: User) -> dict:
-        prediction = db.session.get(PredictionResult, prediction_id)
+    def get_by_id(prediction_id: str, current_user: User) -> dict:
+        try:
+            pred_uuid = UUID(str(prediction_id))
+        except Exception:
+            raise ValueError("Prediction not found")
+        prediction = db.session.get(PredictionResult, pred_uuid)
         if not prediction or prediction.is_deleted:
             raise ValueError("Prediction not found")
 
@@ -121,8 +134,12 @@ class PredictionResultService:
         return PredictionResultService._to_dict(prediction)
 
     @staticmethod
-    def delete_prediction(prediction_id: int, current_user: User) -> dict:
-        prediction = db.session.get(PredictionResult, prediction_id)
+    def delete_prediction(prediction_id: str, current_user: User) -> dict:
+        try:
+            pred_uuid = UUID(str(prediction_id))
+        except Exception:
+            raise ValueError("Prediction not found")
+        prediction = db.session.get(PredictionResult, pred_uuid)
         if not prediction or prediction.is_deleted:
             raise ValueError("Prediction not found")
 

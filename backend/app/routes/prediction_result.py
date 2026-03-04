@@ -6,7 +6,7 @@ from app.services.prediction_result_service import PredictionResultService
 predictions_bp = Blueprint("predictions", __name__)
 
 
-@predictions_bp.route("/eeg-records/<int:eeg_record_id>/prediction", methods=["GET"])
+@predictions_bp.route("/eeg-records/<uuid:eeg_record_id>/prediction", methods=["GET"])
 @jwt_required()
 def get_prediction_by_eeg(eeg_record_id):
     """
@@ -28,7 +28,7 @@ def get_prediction_by_eeg(eeg_record_id):
         return jsonify({"error": "Internal server error"}), 500
 
 
-@predictions_bp.route("/patients/<int:patient_id>/predictions", methods=["GET"])
+@predictions_bp.route("/patients/<uuid:patient_id>/predictions", methods=["GET"])
 @jwt_required()
 def list_predictions_by_patient(patient_id):
     """
@@ -67,7 +67,7 @@ def list_all_predictions():
         return jsonify({"error": "Internal server error"}), 500
 
 
-@predictions_bp.route("/predictions/<int:prediction_id>", methods=["GET"])
+@predictions_bp.route("/predictions/<uuid:prediction_id>", methods=["GET"])
 @jwt_required()
 def get_prediction(prediction_id):
     """
@@ -86,7 +86,7 @@ def get_prediction(prediction_id):
         return jsonify({"error": "Internal server error"}), 500
 
 
-@predictions_bp.route("/predictions/<int:prediction_id>", methods=["DELETE"])
+@predictions_bp.route("/predictions/<uuid:prediction_id>", methods=["DELETE"])
 @jwt_required()
 def delete_prediction(prediction_id):
     """

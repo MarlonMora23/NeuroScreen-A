@@ -54,7 +54,7 @@ def list_patients():
         return jsonify({"error": "Internal server error"}), 500
 
 
-@patients_bp.route("/patients/<int:patient_id>", methods=["GET"])
+@patients_bp.route("/patients/<uuid:patient_id>", methods=["GET"])
 @jwt_required()
 def get_patient(patient_id):
     try:
@@ -70,7 +70,7 @@ def get_patient(patient_id):
         return jsonify({"error": "Internal server error"}), 500
 
 
-@patients_bp.route("/patients/<int:patient_id>", methods=["PUT"])
+@patients_bp.route("/patients/<uuid:patient_id>", methods=["PUT"])
 @jwt_required()
 def update_patient(patient_id):
     data = request.get_json() or {}
@@ -90,7 +90,7 @@ def update_patient(patient_id):
         return jsonify({"error": "Internal server error"}), 500
 
 
-@patients_bp.route("/patients/<int:patient_id>", methods=["DELETE"])
+@patients_bp.route("/patients/<uuid:patient_id>", methods=["DELETE"])
 @jwt_required()
 def delete_patient(patient_id):
     try:

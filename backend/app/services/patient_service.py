@@ -117,8 +117,12 @@ class PatientService:
         return [PatientService._to_dict(p) for p in patients]
 
     @staticmethod
-    def get_patient(patient_id: int, current_user):
-        patient = db.session.get(Patient, patient_id)
+    def get_patient(patient_id: str, current_user):
+        try:
+            patient_uuid = UUID(str(patient_id))
+        except Exception:
+            raise ValueError("Patient not found")
+        patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
             raise ValueError("Patient not found")
 
@@ -131,8 +135,12 @@ class PatientService:
         return PatientService._to_dict(patient)
 
     @staticmethod
-    def update_patient(patient_id: int, data: dict, current_user):
-        patient = db.session.get(Patient, patient_id)
+    def update_patient(patient_id: str, data: dict, current_user):
+        try:
+            patient_uuid = UUID(str(patient_id))
+        except Exception:
+            raise ValueError("Patient not found")
+        patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
             raise ValueError("Patient not found")
 
@@ -161,8 +169,12 @@ class PatientService:
         return PatientService._to_dict(patient)
 
     @staticmethod
-    def delete_patient(patient_id: int, current_user):
-        patient = db.session.get(Patient, patient_id)
+    def delete_patient(patient_id: str, current_user):
+        try:
+            patient_uuid = UUID(str(patient_id))
+        except Exception:
+            raise ValueError("Patient not found")
+        patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
             raise ValueError("Patient not found")
 
@@ -180,8 +192,9 @@ class PatientService:
     @staticmethod
     def _to_dict(patient: Patient):
         return {
-            "id": patient.id,
+            "id": str(patient.id),
             "identification_number": patient.identification_number,
+            "created_by": str(patient.created_by),
             "first_name": patient.first_name,
             "last_name": patient.last_name,
             "birth_date": (

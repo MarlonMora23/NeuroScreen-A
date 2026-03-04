@@ -1,4 +1,5 @@
 from werkzeug.security import generate_password_hash
+from uuid import UUID
 from app.extensions import db
 from app.models.user import User, UserRole
 
@@ -64,8 +65,12 @@ class UserService:
         return [UserService._to_dict(u) for u in users]
 
     @staticmethod
-    def get_user(user_id: int, current_user: User):
-        user = db.session.get(User, user_id)
+    def get_user(user_id: str, current_user: User):
+        try:
+            user_uuid = UUID(str(user_id))
+        except Exception:
+            raise ValueError("User not found")
+        user = db.session.get(User, user_uuid)
         if not user or user.is_deleted:
             raise ValueError("User not found")
 
@@ -77,8 +82,12 @@ class UserService:
         return UserService._to_dict(user)
 
     @staticmethod
-    def update_user(user_id: int, data: dict, current_user: User):
-        user = db.session.get(User, user_id)
+    def update_user(user_id: str, data: dict, current_user: User):
+        try:
+            user_uuid = UUID(str(user_id))
+        except Exception:
+            raise ValueError("User not found")
+        user = db.session.get(User, user_uuid)
         if not user or user.is_deleted:
             raise ValueError("User not found")
 
@@ -111,8 +120,12 @@ class UserService:
         return UserService._to_dict(user)
 
     @staticmethod
-    def delete_user(user_id: int, current_user: User):
-        user = db.session.get(User, user_id)
+    def delete_user(user_id: str, current_user: User):
+        try:
+            user_uuid = UUID(str(user_id))
+        except Exception:
+            raise ValueError("User not found")
+        user = db.session.get(User, user_uuid)
         if not user or user.is_deleted:
             raise ValueError("User not found")
 
@@ -127,7 +140,7 @@ class UserService:
     @staticmethod
     def _to_dict(user: User):
         return {
-            "id": user.id,
+            "id": str(user.id),
             "email": user.email,
             "first_name": user.first_name,
             "last_name": user.last_name,

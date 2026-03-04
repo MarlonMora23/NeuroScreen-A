@@ -1,5 +1,5 @@
 import enum
-
+from sqlalchemy.dialects.postgresql import UUID
 from app.extensions import db
 from app.models.base import BaseModel
 
@@ -11,7 +11,7 @@ class PredictionResult(BaseModel):
     __tablename__ = "prediction_results"
 
     eeg_record_id = db.Column(
-        db.Integer,
+        UUID(as_uuid=True),
         db.ForeignKey("eeg_records.id"),
         unique=True,
         index=True,

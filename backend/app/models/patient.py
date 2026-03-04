@@ -1,5 +1,7 @@
 from app.extensions import db
 from app.models.base import BaseModel
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 
 class Patient(BaseModel):
     __tablename__ = "patients"
@@ -11,6 +13,10 @@ class Patient(BaseModel):
 
     birth_date = db.Column(db.Date, nullable=True)
     
-    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_by = db.Column(
+        UUID(as_uuid=True),
+        db.ForeignKey("users.id"),
+        nullable=False
+    )
 
     eeg_records = db.relationship("EegRecord", backref="patient", lazy=True)

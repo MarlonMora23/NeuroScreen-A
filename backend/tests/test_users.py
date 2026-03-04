@@ -1,4 +1,5 @@
 import pytest
+import uuid
 
 
 class TestCreateUser:
@@ -65,7 +66,7 @@ class TestListUsers:
         client.delete(f"/api/users/{regular_user.id}", headers=admin_headers)
         response = client.get("/api/users", headers=admin_headers)
         ids = [u["id"] for u in response.get_json()]
-        assert regular_user.id not in ids
+        assert str(regular_user.id) not in ids
 
 
 class TestGetUser:
@@ -73,7 +74,7 @@ class TestGetUser:
     def test_admin_can_get_any_user(self, client, admin_headers, regular_user):
         response = client.get(f"/api/users/{regular_user.id}", headers=admin_headers)
         assert response.status_code == 200
-        assert response.get_json()["id"] == regular_user.id
+        assert response.get_json()["id"] == str(regular_user.id)
 
     def test_user_can_get_itself(self, client, user_headers, regular_user):
         response = client.get(f"/api/users/{regular_user.id}", headers=user_headers)
@@ -84,7 +85,7 @@ class TestGetUser:
         assert response.status_code == 403
 
     def test_get_nonexistent_user(self, client, admin_headers):
-        response = client.get("/api/users/99999", headers=admin_headers)
+        response = client.get(f"/api/users/{uuid.uuid4()}", headers=admin_headers)
         assert response.status_code == 404
 
 
@@ -127,7 +128,7 @@ class TestDeleteUser:
         assert response.status_code == 403
 
     def test_delete_nonexistent_user(self, client, admin_headers):
-        response = client.delete("/api/users/99999", headers=admin_headers)
+        response = client.delete(f"/api/users/{uuid.uuid4()}", headers=admin_headers)
         assert response.status_code == 404
 
     def test_deleted_user_not_found_after_deletion(self, client, admin_headers, regular_user):

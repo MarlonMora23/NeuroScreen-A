@@ -1,5 +1,6 @@
 import pytest
 import io
+import uuid
 
 
 def upload_eeg(client, headers, patient_id, parquet_file):
@@ -86,7 +87,7 @@ class TestUploadEeg:
         assert response.status_code == 400
 
     def test_upload_to_nonexistent_patient(self, client, user_headers, parquet_file):
-        response = upload_eeg(client, user_headers, 99999, parquet_file)
+        response = upload_eeg(client, user_headers, str(uuid.uuid4()), parquet_file)
         assert response.status_code == 400
 
     def test_user_cannot_upload_to_another_users_patient(
@@ -142,7 +143,7 @@ class TestListEegRecords:
         )
         data = response.get_json()
         assert response.status_code == 200
-        assert all(r["patient_id"] == sample_patient.id for r in data)
+        assert all(r["patient_id"] == str(sample_patient.id) for r in data)
 
 
 class TestGetEegRecord:
@@ -172,7 +173,7 @@ class TestGetEegRecord:
         assert response.status_code == 403
 
     def test_get_nonexistent_record(self, client, user_headers):
-        response = client.get("/api/eeg-records/99999", headers=user_headers)
+        response = client.get(f"/api/eeg-records/{uuid.uuid4()}", headers=user_headers)
         assert response.status_code == 404
 
 

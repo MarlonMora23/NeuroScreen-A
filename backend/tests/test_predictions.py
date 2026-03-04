@@ -1,4 +1,5 @@
 import pytest
+import uuid
 
 
 def upload_and_get_prediction_id(client, headers, patient_id, parquet_file):
@@ -43,7 +44,7 @@ class TestGetPrediction:
             assert 0.0 <= float(data["confidence"]) <= 1.0
 
     def test_prediction_not_available_for_nonexistent_record(self, client, user_headers):
-        response = client.get("/api/eeg-records/99999/prediction", headers=user_headers)
+        response = client.get(f"/api/eeg-records/{uuid.uuid4()}/prediction", headers=user_headers)
         assert response.status_code == 404
 
     def test_user_cannot_get_another_users_prediction(
@@ -87,7 +88,7 @@ class TestGetPrediction:
             assert "file_path" not in response.get_json()
 
     def test_prediction_requires_auth(self, client):
-        response = client.get("/api/eeg-records/1/prediction")
+        response = client.get(f"/api/eeg-records/{uuid.uuid4()}/prediction")
         assert response.status_code == 401
 
 

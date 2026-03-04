@@ -1,5 +1,6 @@
 import os
 import uuid
+from uuid import UUID
 from app.extensions import db
 from app.models.eeg_record import EegRecord, EegStatus, FILE_TYPE
 from app.models.patient import Patient
@@ -12,8 +13,12 @@ ALLOWED_EXTENSIONS = {FILE_TYPE.PARQUET: ".parquet"}
 class EegRecordService:
 
     @staticmethod
-    def create_eeg_record(file, patient_id: int, current_user: User) -> dict:
-        patient = db.session.get(Patient, patient_id)
+    def create_eeg_record(file, patient_id: str, current_user: User) -> dict:
+        try:
+            patient_uuid = UUID(str(patient_id))
+        except Exception:
+            raise ValueError("Patient not found")
+        patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
             raise ValueError("Patient not found")
 
@@ -79,9 +84,9 @@ class EegRecordService:
 
         if filters.get("patient_id"):
             try:
-                patient_id = int(filters["patient_id"])
+                patient_id = UUID(str(filters["patient_id"]))
             except (ValueError, TypeError):
-                raise ValueError("patient_id must be an integer")
+                raise ValueError("patient_id must be a valid UUID")
             query = query.filter_by(patient_id=patient_id)
 
         if filters.get("status"):
@@ -96,8 +101,12 @@ class EegRecordService:
         return [EegRecordService._to_dict(r) for r in records]
     
     @staticmethod
-    def get_eeg_record(eeg_id: int, current_user: User) -> dict:
-        eeg = db.session.get(EegRecord, eeg_id)
+    def get_eeg_record(eeg_id: str, current_user: User) -> dict:
+        try:
+            eeg_uuid = UUID(str(eeg_id))
+        except Exception:
+            raise ValueError("EEG record not found")
+        eeg = db.session.get(EegRecord, eeg_uuid)
 
         if not eeg or eeg.is_deleted:
             raise ValueError("EEG record not found")
@@ -111,8 +120,12 @@ class EegRecordService:
         return EegRecordService._to_dict(eeg)
 
     @staticmethod
-    def list_by_patient(patient_id: int, current_user: User) -> list:
-        patient = db.session.get(Patient, patient_id)
+    def list_by_patient(patient_id: str, current_user: User) -> list:
+        try:
+            patient_uuid = UUID(str(patient_id))
+        except Exception:
+            raise ValueError("Patient not found")
+        patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
             raise ValueError("Patient not found")
 
@@ -134,8 +147,12 @@ class EegRecordService:
         return [EegRecordService._to_dict(r) for r in query.all()]
     
     @staticmethod
-    def get_eeg_status(eeg_id: int, current_user: User) -> dict:
-        eeg = db.session.get(EegRecord, eeg_id)
+    def get_eeg_status(eeg_id: str, current_user: User) -> dict:
+        try:
+            eeg_uuid = UUID(str(eeg_id))
+        except Exception:
+            raise ValueError("EEG record not found")
+        eeg = db.session.get(EegRecord, eeg_uuid)
 
         if not eeg or eeg.is_deleted:
             raise ValueError("EEG record not found")
@@ -154,8 +171,12 @@ class EegRecordService:
         }
     
     @staticmethod
-    def delete_eeg_record(eeg_id: int, current_user: User) -> dict:
-        eeg = db.session.get(EegRecord, eeg_id)
+    def delete_eeg_record(eeg_id: str, current_user: User) -> dict:
+        try:
+            eeg_uuid = UUID(str(eeg_id))
+        except Exception:
+            raise ValueError("EEG record not found")
+        eeg = db.session.get(EegRecord, eeg_uuid)
 
         if not eeg or eeg.is_deleted:
             raise ValueError("EEG record not found")
@@ -177,9 +198,9 @@ class EegRecordService:
     @staticmethod
     def _to_dict(record: EegRecord) -> dict:
         return {
-            "id": record.id,
-            "patient_id": record.patient_id,
-            "uploader_id": record.uploader_id,
+            "id": str(record.id),
+            "patient_id": str(record.patient_id),
+            "uploader_id": str(record.uploader_id),
             "file_name": record.file_name,
             "file_type": record.file_type.value,
             "file_size_bytes": record.file_size_bytes,

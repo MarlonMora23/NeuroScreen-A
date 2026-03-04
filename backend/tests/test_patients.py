@@ -1,4 +1,5 @@
 import pytest
+import uuid
 
 
 class TestCreatePatient:
@@ -62,19 +63,19 @@ class TestListPatients:
         # sample_patient pertenece a regular_user
         response = client.get("/api/patients", headers=another_user_headers)
         ids = [p["id"] for p in response.get_json()]
-        assert sample_patient.id not in ids
+        assert str(sample_patient.id) not in ids
 
     def test_admin_sees_all_patients(self, client, admin_headers, sample_patient):
         response = client.get("/api/patients", headers=admin_headers)
         assert response.status_code == 200
         ids = [p["id"] for p in response.get_json()]
-        assert sample_patient.id in ids
+        assert str(sample_patient.id) in ids
 
     def test_list_excludes_deleted_patients(self, client, admin_headers, sample_patient):
         client.delete(f"/api/patients/{sample_patient.id}", headers=admin_headers)
         response = client.get("/api/patients", headers=admin_headers)
         ids = [p["id"] for p in response.get_json()]
-        assert sample_patient.id not in ids
+        assert str(sample_patient.id) not in ids
 
 
 class TestGetPatient:
@@ -82,7 +83,7 @@ class TestGetPatient:
     def test_user_can_get_own_patient(self, client, user_headers, sample_patient):
         response = client.get(f"/api/patients/{sample_patient.id}", headers=user_headers)
         assert response.status_code == 200
-        assert response.get_json()["id"] == sample_patient.id
+        assert response.get_json()["id"] == str(sample_patient.id)
 
     def test_user_cannot_get_another_users_patient(self, client, another_user_headers, sample_patient):
         response = client.get(f"/api/patients/{sample_patient.id}", headers=another_user_headers)
@@ -93,7 +94,7 @@ class TestGetPatient:
         assert response.status_code == 200
 
     def test_get_nonexistent_patient(self, client, user_headers):
-        response = client.get("/api/patients/99999", headers=user_headers)
+        response = client.get(f"/api/patients/{uuid.uuid4()}", headers=user_headers)
         assert response.status_code == 404
 
     def test_get_deleted_patient_returns_404(self, client, admin_headers, sample_patient):
@@ -145,5 +146,5 @@ class TestDeletePatient:
         assert response.status_code == 200
 
     def test_delete_nonexistent_patient(self, client, user_headers):
-        response = client.delete("/api/patients/99999", headers=user_headers)
+        response = client.delete(f"/api/patients/{uuid.uuid4()}", headers=user_headers)
         assert response.status_code == 404
