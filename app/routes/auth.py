@@ -40,5 +40,6 @@ def me():
             "role": user.role.value,
             "last_login": user.last_login.isoformat() if user.last_login else None,
         }), 200
-    except Exception:
-        return jsonify({"error": "Could not retrieve user info"}), 500
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500

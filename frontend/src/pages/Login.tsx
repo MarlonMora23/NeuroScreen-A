@@ -114,6 +114,9 @@ const Login = () => {
               )}
             </Button>
           </form>
+          <div className="mt-4 text-sm flex justify-end">
+            <a href="/forgot-password" className="text-primary hover:underline">¿Olvidaste tu contraseña?</a>
+          </div>
         </div>
       </motion.div>
     </div>

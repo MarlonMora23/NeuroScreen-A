@@ -1,4 +1,4 @@
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db
 from app.models.user import User, UserRole
 
@@ -101,6 +101,18 @@ class UserService:
 
             if existing:
                 raise ValueError("Email already registered")
+
+            # Validate email format
+            if "@" not in email or "." not in email:
+                raise ValueError("Invalid email format")
+
+            # If user is updating their own email, require current password verification
+            if current_user.id == user.id:
+                current_password = data.get("current_password")
+                if not current_password:
+                    raise ValueError("Current password is required to change email")
+                if not check_password_hash(user.password_hash, current_password):
+                    raise ValueError("Invalid current password")
 
             user.email = email
 
