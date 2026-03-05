@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Brain, Activity, Users, UserPlus, Upload, BarChart3, LogOut } from "lucide-react";
+import {
+  Brain,
+  Activity,
+  Users,
+  UserPlus,
+  Upload,
+  BarChart3,
+  UserCircle,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/contexts/theme-context";
@@ -14,22 +22,13 @@ import ProcessingNotification from "@/components/ProcessingNotification";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { notifications, dismissNotification } = useProcessing();
   const [activeTab, setActiveTab] = useState("patients");
   // incrementing counter used to signal child components to refresh data
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const isAdmin = user?.role === "admin";
   const { theme, toggleTheme } = useTheme();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/");
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,14 +59,6 @@ const Dashboard = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            {user && (
-              <div className="hidden sm:flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">{user.email}</span>
-                <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary capitalize">
-                  {user.role}
-                </span>
-              </div>
-            )}
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
@@ -80,11 +71,13 @@ const Dashboard = () => {
               )}
             </button>
             <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary/50 transition"
             >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Cerrar sesión</span>
+              <UserCircle className="w-5 h-5 text-primary" />
+              <span className="hidden sm:inline-block w-[80px] text-sm">
+                Cuenta
+              </span>
             </button>
           </div>
         </div>
@@ -93,7 +86,9 @@ const Dashboard = () => {
       {/* Main content */}
       <main className="container mx-auto px-4 pt-24 pb-12">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`w-full max-w-2xl mx-auto grid ${isAdmin ? "grid-cols-4" : "grid-cols-3"} h-auto p-1 bg-secondary/50 rounded-xl mb-8`}>
+          <TabsList
+            className={`w-full max-w-2xl mx-auto grid ${isAdmin ? "grid-cols-4" : "grid-cols-3"} h-auto p-1 bg-secondary/50 rounded-xl mb-8`}
+          >
             <TabsTrigger
               value="patients"
               className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-3 px-2 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"

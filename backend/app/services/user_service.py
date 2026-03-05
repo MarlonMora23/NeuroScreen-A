@@ -113,6 +113,12 @@ class UserService:
 
             user.email = email
 
+        if "password" in data:
+            password = data["password"]
+            if len(password) < 8:
+                raise ValueError("Password must be at least 8 characters long")
+            user.password_hash = generate_password_hash(password)
+
         user.first_name = data.get("first_name", user.first_name)
         user.last_name = data.get("last_name", user.last_name)
 

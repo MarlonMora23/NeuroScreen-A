@@ -368,7 +368,7 @@ const ClassificationsTab = ({
               {!loading && filtered.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center text-muted-foreground py-8"
                   >
                     No se encontraron clasificaciones

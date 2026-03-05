@@ -9,6 +9,7 @@ import {
   Loader,
   Eye,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import CreateUserDialog from "../dialogs/CreateUserDialog";
+import UpdateUserDialog from "../dialogs/UpdateUserDialog";
 
 const UsersTab = () => {
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -63,6 +66,7 @@ const UsersTab = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const { user } = useAuth();
   const [newUser, setNewUser] = useState<CreateUserRequest>({
     first_name: "",
@@ -97,32 +101,9 @@ const UsersTab = () => {
     (u) =>
       u.first_name.toLowerCase().includes(search.toLowerCase()) ||
       u.last_name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()),
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.id.toString().includes(search),
   );
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCreating(true);
-    try {
-      await userService.createUser(newUser);
-      await loadUsers();
-      setNewUser({
-        first_name: "",
-        last_name: "",
-        email: "",
-        password: "",
-        role: "",
-      });
-      setOpen(false);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Error al crear usuario";
-      setError(errorMessage);
-      console.error("Error creating user:", err);
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   const roleBadge = (role: string) => {
     const variants: Record<string, string> = {
@@ -166,112 +147,7 @@ const UsersTab = () => {
             disabled={loading}
           />
         </div>
-
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button
-              className="glow-primary gap-2"
-              disabled={loading || isCreating}
-            >
-              <Plus className="w-4 h-4" />
-              Nuevo Usuario
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="glass border-border/50">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" />
-                Crear Nuevo Usuario
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4 pt-2">
-              <div className="space-y-2">
-                <Label>Nombre</Label>
-                <Input
-                  required
-                  value={newUser.first_name}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, first_name: e.target.value })
-                  }
-                  placeholder="Nombre del usuario"
-                  className="bg-secondary/50"
-                  disabled={isCreating}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Apellido</Label>
-                <Input
-                  required
-                  value={newUser.last_name}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, last_name: e.target.value })
-                  }
-                  placeholder="Apellido del usuario"
-                  className="bg-secondary/50"
-                  disabled={isCreating}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Correo electrónico</Label>
-                <Input
-                  required
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, email: e.target.value })
-                  }
-                  placeholder="correo@ejemplo.com"
-                  className="bg-secondary/50"
-                  disabled={isCreating}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Contraseña</Label>
-                <Input
-                  required
-                  type="password"
-                  value={newUser.password}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, password: e.target.value })
-                  }
-                  placeholder="••••••••"
-                  className="bg-secondary/50"
-                  disabled={isCreating}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Rol</Label>
-                <Select
-                  value={newUser.role}
-                  onValueChange={(v) => setNewUser({ ...newUser, role: v })}
-                  disabled={isCreating}
-                >
-                  <SelectTrigger className="bg-secondary/50">
-                    <SelectValue placeholder="Seleccionar rol" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="user">Usuario</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                type="submit"
-                className="w-full glow-primary"
-                disabled={isCreating}
-              >
-                {isCreating ? (
-                  <span className="flex items-center gap-2">
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Creando...
-                  </span>
-                ) : (
-                  "Crear Usuario"
-                )}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+          <CreateUserDialog onCreated={loadUsers} />
       </div>
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="glass border-border/50">
@@ -332,7 +208,7 @@ const UsersTab = () => {
                   <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
                     {u.email}
                   </TableCell>
-                  <TableCell >{roleBadge(u.role)}</TableCell>
+                  <TableCell>{roleBadge(u.role)}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                     {u.created_at
                       ? new Date(u.created_at).toLocaleDateString()
@@ -357,6 +233,18 @@ const UsersTab = () => {
                         title="Ver detalles"
                       >
                         <Eye className="w-4 h-4" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Editar"
+                        onClick={() => {
+                          setSelectedUser(u);
+                          setEditOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4 text-primary" />
                       </Button>
 
                       {user?.role === "admin" && (
@@ -408,6 +296,12 @@ const UsersTab = () => {
           </Table>
         )}
       </div>
+      <UpdateUserDialog
+              user={selectedUser}
+              open={editOpen}
+              onClose={() => setEditOpen(false)}
+              onUpdated={loadUsers}
+            />
     </motion.div>
   );
 };

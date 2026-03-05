@@ -8,9 +8,9 @@ const LoginNavbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <button
+        <div
           onClick={() => navigate("/")}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 cursor-pointer"
         >
           <div className="relative">
             <Brain className="w-7 h-7 text-primary" />
@@ -19,7 +19,7 @@ const LoginNavbar = () => {
           <span className="text-lg font-bold tracking-tight">
             Neuro<span className="text-primary">Screen-A</span>
           </span>
-        </button>
+        </div>
         <div className="flex items-right gap-3">
           <button
             onClick={toggleTheme}

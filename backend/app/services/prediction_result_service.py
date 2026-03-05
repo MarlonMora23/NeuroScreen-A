@@ -42,13 +42,29 @@ class PredictionResultService:
 
         return PredictionResultService._to_dict(prediction)
 
+
+    @staticmethod
+    def list_all(current_user: User) -> list:
+        query = (
+            PredictionResultService._base_prediction_query()
+            .filter(EegRecord.is_deleted == False)
+        )
+
+        query = PredictionResultService._apply_access_filter(query, current_user)
+
+        predictions = query.order_by(PredictionResult.created_at.desc()).all()
+
+        return [PredictionResultService._to_dict(p) for p in predictions]
+    
     @staticmethod
     def list_by_patient(patient_id: str, current_user: User) -> list:
         try:
             patient_uuid = UUID(str(patient_id))
         except Exception:
             raise ValueError("Patient not found")
+
         patient = db.session.get(Patient, patient_uuid)
+
         if not patient or patient.is_deleted:
             raise ValueError("Patient not found")
 
@@ -66,24 +82,11 @@ class PredictionResultService:
             )
         )
 
-        if current_user.role != UserRole.ADMIN:
-            query = query.filter(EegRecord.uploader_id == current_user.id)
+        query = PredictionResultService._apply_access_filter(query, current_user)
 
-        query = query.order_by(PredictionResult.created_at.desc())
+        predictions = query.order_by(PredictionResult.created_at.desc()).all()
 
-        return [PredictionResultService._to_dict(p) for p in query.all()]
-
-    @staticmethod
-    def list_all(current_user: User) -> list:
-        query = (
-            PredictionResultService._base_prediction_query()
-            .filter(EegRecord.is_deleted == False)
-        )
-
-        if current_user.role != UserRole.ADMIN:
-            query = query.filter(EegRecord.uploader_id == current_user.id)
-
-        return [PredictionResultService._to_dict(p) for p in query.order_by(PredictionResult.created_at.desc()).all()]
+        return [PredictionResultService._to_dict(p) for p in predictions]
     
     @staticmethod
     def get_by_id(prediction_id: str, current_user: User) -> dict:
@@ -91,25 +94,19 @@ class PredictionResultService:
             pred_uuid = UUID(str(prediction_id))
         except Exception:
             raise ValueError("Prediction not found")
-        
-        prediction = (
-            PredictionResultService._base_prediction_query()
-            .filter(PredictionResult.id == pred_uuid)
-            .first()
-        )
+
+        query = PredictionResultService._base_prediction_query()
+        query = PredictionResultService._apply_access_filter(query, current_user)
+
+        prediction = query.filter(PredictionResult.id == pred_uuid).first()
 
         if not prediction or prediction.is_deleted:
             raise ValueError("Prediction not found")
 
         eeg = prediction.eeg_record
+
         if not eeg or eeg.is_deleted:
             raise ValueError("Associated EEG record not found")
-
-        if (
-            current_user.role != UserRole.ADMIN
-            and eeg.uploader_id != current_user.id
-        ):
-            raise PermissionError("Not allowed to access this prediction")
 
         return PredictionResultService._to_dict(prediction)
 
@@ -141,7 +138,7 @@ class PredictionResultService:
     @staticmethod
     def _to_dict(prediction: PredictionResult) -> dict:
         eeg: EegRecord = prediction.eeg_record
-        patient: Patient = eeg.patient
+        patient: Patient | None = eeg.patient if eeg else None
 
         return {
             "id": str(prediction.id),
@@ -164,8 +161,15 @@ class PredictionResultService:
     def _base_prediction_query():
         return (
             db.session.query(PredictionResult)
+            .join(PredictionResult.eeg_record)
             .options(
                 joinedload(PredictionResult.eeg_record)
                 .joinedload(EegRecord.patient)
             )
         )
+    
+    @staticmethod
+    def _apply_access_filter(query, current_user: User):
+        if current_user.role != UserRole.ADMIN:
+            query = query.filter(EegRecord.uploader_id == current_user.id)
+        return query

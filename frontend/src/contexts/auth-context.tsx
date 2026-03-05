@@ -18,6 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   error: string | null;
 }
 
@@ -48,21 +49,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const handleUnauthorized = (event: Event) => {
-      const customEvent = event as CustomEvent<string>;
-
+    const handleUnauthorized = () => {
+      // A este punto solo llegamos si hay un token pero está expirado
       window.sessionStorage.setItem(
         "sessionExpired",
-        "Tu sesión expiró por seguridad.",
+        "Tu sesión expiró por inactividad. Por favor, inicia sesión nuevamente.",
       );
 
       authService.clearToken();
       setUser(null);
-
-      window.sessionStorage.setItem(
-        "sessionExpired",
-        "Tu sesión expiró por seguridad.",
-      );
 
       // Redirección directa
       window.location.href = "/login";
@@ -106,6 +101,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const updatedUser = await authService.getCurrentUser();
+      setUser(updatedUser);
+    } catch (err) {
+      console.error("Error refreshing user:", err);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -114,6 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated: !!user,
         login,
         logout,
+        refreshUser,
         error,
       }}
     >

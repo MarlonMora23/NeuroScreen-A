@@ -5,10 +5,16 @@
 
 import { API_BASE_URL, TOKEN_KEY } from "@/config/api";
 
-export interface HttpError {
+export class HttpError extends Error {
   status: number;
-  message: string;
   data?: unknown;
+
+  constructor(status: number, message: string, data?: unknown) {
+    super(message);
+    this.status = status;
+    this.data = data;
+    Object.setPrototypeOf(this, HttpError.prototype);
+  }
 }
 
 class HttpClient {
@@ -45,30 +51,32 @@ class HttpClient {
       data = await response.text();
     }
 
-  // Interceptar 401 globalmente
+  // Interceptar 401 solo para sesiones expiradas (cuando hay un token)
   if (response.status === 401) {
-    window.dispatchEvent(
-      new CustomEvent("unauthorized", {
-        detail: data?.error || "Session expired",
-      })
-    );
+    const token = this.getToken();
+    // Solo disparar "unauthorized" si hay un token (sesión expirada)
+    // Si no hay token, es simplemente un error de credenciales (login fallido)
+    if (token) {
+      window.dispatchEvent(
+        new CustomEvent("unauthorized", {
+          detail: data?.error || "Session expired",
+        })
+      );
+    }
 
-    const error: HttpError = {
-      status: 401,
-      message: data?.error || "Unauthorized",
+    throw new HttpError(
+      401,
+      data?.error || data?.message || "Unauthorized",
       data,
-    };
-
-    throw error;
+    );
   }
 
     if (!response.ok) {
-      const error: HttpError = {
-        status: response.status,
-        message: data?.message || data?.error || "Error en la solicitud",
+      throw new HttpError(
+        response.status,
+        data?.message || data?.error || "Error en la solicitud",
         data,
-      };
-      throw error;
+      );
     }
 
     return data;

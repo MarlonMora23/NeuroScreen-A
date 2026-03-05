@@ -101,9 +101,15 @@
     @apply border-border;
   }
 
+  html {
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: "Inter", sans-serif;
+    width: 100%;
   }
 
   code,

@@ -153,7 +153,7 @@ class PatientService:
         if "identification_number" in data:
             raise ValueError("identification_number cannot be updated")
 
-        if "birth_date" in data:
+        if "birth_date" in data and data["birth_date"]:
             try:
                 patient.birth_date = datetime.strptime(
                     data["birth_date"], "%Y-%m-%d"
