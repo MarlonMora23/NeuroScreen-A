@@ -3,8 +3,8 @@ from app.extensions import db
 from app.models.eeg_record import EegRecord, EegStatus
 from app.models.patient import Patient
 from app.models.user import User, UserRole
+from uuid import UUID
 from sqlalchemy import func
-
 
 class PatientService:
 

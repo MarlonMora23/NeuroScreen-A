@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Shield, ShieldCheck, AlertCircle, Loader, Eye, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Shield,
+  ShieldCheck,
+  AlertCircle,
+  Loader,
+  Eye,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +37,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { userService, AppUser, CreateUserRequest } from "@/services/user-service";
+import {
+  userService,
+  AppUser,
+  CreateUserRequest,
+} from "@/services/user-service";
 import { useAuth } from "@/contexts/auth-context";
 import { extractError } from "@/lib/utils";
 import {
@@ -71,7 +84,8 @@ const UsersTab = () => {
       const data = await userService.getUsers();
       setUsers(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Error al cargar usuarios";
+      const errorMessage =
+        err instanceof Error ? err.message : "Error al cargar usuarios";
       setError(errorMessage);
       console.error("Error loading users:", err);
     } finally {
@@ -83,7 +97,7 @@ const UsersTab = () => {
     (u) =>
       u.first_name.toLowerCase().includes(search.toLowerCase()) ||
       u.last_name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
+      u.email.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -101,7 +115,8 @@ const UsersTab = () => {
       });
       setOpen(false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Error al crear usuario";
+      const errorMessage =
+        err instanceof Error ? err.message : "Error al crear usuario";
       setError(errorMessage);
       console.error("Error creating user:", err);
     } finally {
@@ -115,7 +130,12 @@ const UsersTab = () => {
       user: "bg-blue-500/20 text-blue-500 border-blue-500/30",
     };
     return (
-      <Badge variant="outline" className={variants[role] || "bg-secondary/20 text-secondary border-secondary/30"}>
+      <Badge
+        variant="outline"
+        className={
+          variants[role] || "bg-secondary/20 text-secondary border-secondary/30"
+        }
+      >
         {role === "admin" && <ShieldCheck className="w-3 h-3 mr-1" />}
         {role.charAt(0).toUpperCase() + role.slice(1)}
       </Badge>
@@ -123,7 +143,11 @@ const UsersTab = () => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
       {error && (
         <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
           <AlertCircle className="h-4 w-4" />
@@ -145,7 +169,10 @@ const UsersTab = () => {
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="glow-primary gap-2" disabled={loading || isCreating}>
+            <Button
+              className="glow-primary gap-2"
+              disabled={loading || isCreating}
+            >
               <Plus className="w-4 h-4" />
               Nuevo Usuario
             </Button>
@@ -163,7 +190,9 @@ const UsersTab = () => {
                 <Input
                   required
                   value={newUser.first_name}
-                  onChange={(e) => setNewUser({ ...newUser, first_name: e.target.value })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, first_name: e.target.value })
+                  }
                   placeholder="Nombre del usuario"
                   className="bg-secondary/50"
                   disabled={isCreating}
@@ -174,7 +203,9 @@ const UsersTab = () => {
                 <Input
                   required
                   value={newUser.last_name}
-                  onChange={(e) => setNewUser({ ...newUser, last_name: e.target.value })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, last_name: e.target.value })
+                  }
                   placeholder="Apellido del usuario"
                   className="bg-secondary/50"
                   disabled={isCreating}
@@ -186,7 +217,9 @@ const UsersTab = () => {
                   required
                   type="email"
                   value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, email: e.target.value })
+                  }
                   placeholder="correo@ejemplo.com"
                   className="bg-secondary/50"
                   disabled={isCreating}
@@ -198,7 +231,9 @@ const UsersTab = () => {
                   required
                   type="password"
                   value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
                   placeholder="••••••••"
                   className="bg-secondary/50"
                   disabled={isCreating}
@@ -220,7 +255,11 @@ const UsersTab = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full glow-primary" disabled={isCreating}>
+              <Button
+                type="submit"
+                className="w-full glow-primary"
+                disabled={isCreating}
+              >
                 {isCreating ? (
                   <span className="flex items-center gap-2">
                     <Loader className="w-4 h-4 animate-spin" />
@@ -245,7 +284,8 @@ const UsersTab = () => {
                 <strong>ID:</strong> {selectedUser.id}
               </div>
               <div>
-                <strong>Nombre:</strong> {selectedUser.first_name} {selectedUser.last_name}
+                <strong>Nombre:</strong> {selectedUser.first_name}{" "}
+                {selectedUser.last_name}
               </div>
               <div>
                 <strong>Email:</strong> {selectedUser.email}
@@ -272,39 +312,52 @@ const UsersTab = () => {
           <Table>
             <TableHeader>
               <TableRow className="border-border/30 hover:bg-transparent">
-                <TableHead>ID</TableHead>
+                <TableHead>#</TableHead>
                 <TableHead>Nombre</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
                 <TableHead className="hidden sm:table-cell">Email</TableHead>
-                <TableHead>Rol</TableHead>
+                <TableHead className="text-left">Rol</TableHead>
                 <TableHead className="hidden md:table-cell">Registro</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((u) => (
+              {filtered.map((u, index) => (
                 <TableRow key={u.id} className="border-border/20">
-                  <TableCell className="font-mono text-primary text-sm">{u.id}</TableCell>
+                  <TableCell className="font-mono text-primary text-sm">
+                    {index + 1}
+                  </TableCell>
                   <TableCell className="font-medium">
                     {u.first_name} {u.last_name}
                   </TableCell>
+                  <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                    {u.email}
+                  </TableCell>
+                  <TableCell >{roleBadge(u.role)}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                    {u.created_at
+                      ? new Date(u.created_at).toLocaleDateString()
+                      : "-"}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={async () => {
-                        try {
-                          const data = await userService.getUser(String(u.id));
-                          setSelectedUser(data);
-                          setDetailsOpen(true);
-                        } catch (err) {
-                          setError(extractError(err));
-                        }
-                      }}
-                      title="Ver detalles"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const data = await userService.getUser(
+                              String(u.id),
+                            );
+                            setSelectedUser(data);
+                            setDetailsOpen(true);
+                          } catch (err) {
+                            setError(extractError(err));
+                          }
+                        }}
+                        title="Ver detalles"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
 
                       {user?.role === "admin" && (
                         <AlertDialog>
@@ -315,7 +368,9 @@ const UsersTab = () => {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="glass border-border/50">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Confirmar eliminación
+                              </AlertDialogTitle>
                             </AlertDialogHeader>
                             <div className="mt-4 text-right space-x-2">
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -337,18 +392,14 @@ const UsersTab = () => {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                    {u.email}
-                  </TableCell>
-                  <TableCell>{roleBadge(u.role)}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-                    {u.created_at ? new Date(u.created_at).toLocaleDateString() : "-"}
-                  </TableCell>
                 </TableRow>
               ))}
               {!loading && filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center text-muted-foreground py-8"
+                  >
                     No se encontraron usuarios
                   </TableCell>
                 </TableRow>

@@ -4,6 +4,8 @@ from app.ml.inference import run_inference
 from app.models.eeg_record import EegRecord, EegStatus
 from app.models.prediction_result import PredictionResult
 from app.ml.preprocessing import build_tensor_from_parquet
+from app.audit import log_action
+from app.models.user import User
 
 @celery.task(bind=True, max_retries=3)
 def process_eeg_record(self, eeg_record_id: int):
@@ -13,6 +15,9 @@ def process_eeg_record(self, eeg_record_id: int):
     if not eeg_record:
         # No tiene sentido reintentar si el registro no existe
         return {"error": f"EegRecord {eeg_record_id} not found"}
+
+    # Get the uploader (user context)
+    uploader = db.session.get(User, eeg_record.uploader_id)
 
     try:
         eeg_record.status = EegStatus.PROCESSING
@@ -46,6 +51,22 @@ def process_eeg_record(self, eeg_record_id: int):
 
         db.session.commit()
 
+        # Log successful inference
+        log_action(
+            action="infer",
+            resource="eeg_prediction",
+            details={
+                "eeg_record_id": eeg_record_id,
+                "patient_id": str(eeg_record.patient_id),
+                "uploader_id": str(uploader.id),
+                "model_version": "eegnet_v1",
+                "result": label,
+                "confidence": float(confidence),
+                "processing_time_ms": eeg_record.processing_time_ms
+            },
+            status="success"
+        )
+
         return {"eeg_record_id": eeg_record_id, "status": "processed"}
 
     except Exception as e:
@@ -58,5 +79,19 @@ def process_eeg_record(self, eeg_record_id: int):
             db.session.commit()
         except Exception:
             db.session.rollback()
+
+        # Log failed inference
+        log_action(
+            action="infer",
+            resource="eeg_prediction",
+            details={
+                "eeg_record_id": eeg_record_id,
+                "patient_id": str(eeg_record.patient_id),
+                "uploader_id": str(uploader.id),
+                "model_version": "eegnet_v1",
+                "error": str(e)[:200]
+            },
+            status="failed"
+        )
 
         raise self.retry(exc=e, countdown=60)  # reintenta tras 60s, máximo 3 veces

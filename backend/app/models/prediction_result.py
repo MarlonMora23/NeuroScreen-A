@@ -23,3 +23,5 @@ class PredictionResult(BaseModel):
     raw_probability = db.Column(db.Numeric(5,4), nullable=True)
 
     model_version = db.Column(db.String(120), nullable=False)
+
+    eeg_record = db.relationship("EegRecord", back_populates="prediction_result")

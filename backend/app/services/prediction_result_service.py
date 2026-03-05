@@ -4,7 +4,7 @@ from app.models.prediction_result import PredictionResult
 from app.models.eeg_record import EegRecord, EegStatus
 from app.models.patient import Patient
 from app.models.user import User, UserRole
-
+from sqlalchemy.orm import joinedload
 
 class PredictionResultService:
 
@@ -31,9 +31,11 @@ class PredictionResultService:
         if eeg.status == EegStatus.FAILED:
             raise ValueError("EEG processing failed — no prediction available")
 
-        prediction = PredictionResult.query.filter_by(
-            eeg_record_id=eeg_record_id
-        ).first()
+        prediction = (
+            PredictionResultService._base_prediction_query()
+            .filter(PredictionResult.eeg_record_id == eeg_uuid)
+            .first()
+        )
 
         if not prediction:
             raise ValueError("Prediction result not found")
@@ -57,10 +59,9 @@ class PredictionResultService:
             raise PermissionError("Not allowed to access this patient's predictions")
 
         query = (
-            db.session.query(PredictionResult)
-            .join(EegRecord, PredictionResult.eeg_record_id == EegRecord.id)
+            PredictionResultService._base_prediction_query()
             .filter(
-                EegRecord.patient_id == patient_id,
+                EegRecord.patient_id == patient_uuid,
                 EegRecord.is_deleted == False,
             )
         )
@@ -74,54 +75,33 @@ class PredictionResultService:
 
     @staticmethod
     def list_all(current_user: User) -> list:
+        query = (
+            PredictionResultService._base_prediction_query()
+            .filter(EegRecord.is_deleted == False)
+        )
 
         if current_user.role != UserRole.ADMIN:
-            predictions = (
-                db.session.query(PredictionResult)
-                .join(EegRecord, PredictionResult.eeg_record_id == EegRecord.id)
-                .filter(EegRecord.uploader_id == current_user.id)
-                .filter(EegRecord.is_deleted == False)
-                .order_by(PredictionResult.created_at.desc())
-                .all()
-            )
+            query = query.filter(EegRecord.uploader_id == current_user.id)
 
-        else:
-            predictions = (
-                db.session.query(PredictionResult)
-                .join(EegRecord, PredictionResult.eeg_record_id == EegRecord.id)
-                .filter(EegRecord.is_deleted == False)
-                .order_by(PredictionResult.created_at.desc())
-                .all()
-            )
-
-        return [PredictionResultService._to_dict(p) for p in predictions]
-
-    @staticmethod
-    def _to_dict(prediction: PredictionResult) -> dict:
-        return {
-            "id": str(prediction.id),
-            "eeg_record_id": str(prediction.eeg_record_id),
-            "result": prediction.result.value,
-            "confidence": float(prediction.confidence),
-            "raw_probability": (
-                float(prediction.raw_probability)
-                if prediction.raw_probability is not None else None
-            ),
-            "model_version": prediction.model_version,
-            "created_at": prediction.created_at.isoformat(),
-        }
-
+        return [PredictionResultService._to_dict(p) for p in query.order_by(PredictionResult.created_at.desc()).all()]
+    
     @staticmethod
     def get_by_id(prediction_id: str, current_user: User) -> dict:
         try:
             pred_uuid = UUID(str(prediction_id))
         except Exception:
             raise ValueError("Prediction not found")
-        prediction = db.session.get(PredictionResult, pred_uuid)
+        
+        prediction = (
+            PredictionResultService._base_prediction_query()
+            .filter(PredictionResult.id == pred_uuid)
+            .first()
+        )
+
         if not prediction or prediction.is_deleted:
             raise ValueError("Prediction not found")
 
-        eeg = db.session.get(EegRecord, prediction.eeg_record_id)
+        eeg = prediction.eeg_record
         if not eeg or eeg.is_deleted:
             raise ValueError("Associated EEG record not found")
 
@@ -139,7 +119,13 @@ class PredictionResultService:
             pred_uuid = UUID(str(prediction_id))
         except Exception:
             raise ValueError("Prediction not found")
-        prediction = db.session.get(PredictionResult, pred_uuid)
+
+        prediction = (
+            PredictionResultService._base_prediction_query()
+            .filter(PredictionResult.id == pred_uuid)
+            .first()
+        )
+
         if not prediction or prediction.is_deleted:
             raise ValueError("Prediction not found")
 
@@ -151,3 +137,35 @@ class PredictionResultService:
         db.session.commit()
 
         return PredictionResultService._to_dict(prediction)
+
+    @staticmethod
+    def _to_dict(prediction: PredictionResult) -> dict:
+        eeg: EegRecord = prediction.eeg_record
+        patient: Patient = eeg.patient
+
+        return {
+            "id": str(prediction.id),
+            "eeg_record_id": str(prediction.eeg_record_id),
+            "patient_identification_number": (
+                patient.identification_number if patient else None
+            ),
+            "file_name": eeg.file_name if eeg else None,
+            "result": prediction.result.value,
+            "confidence": float(prediction.confidence),
+            "raw_probability": (
+                float(prediction.raw_probability)
+                if prediction.raw_probability is not None else None
+            ),
+            "model_version": prediction.model_version,
+            "created_at": prediction.created_at.isoformat(),
+        }
+
+    @staticmethod
+    def _base_prediction_query():
+        return (
+            db.session.query(PredictionResult)
+            .options(
+                joinedload(PredictionResult.eeg_record)
+                .joinedload(EegRecord.patient)
+            )
+        )

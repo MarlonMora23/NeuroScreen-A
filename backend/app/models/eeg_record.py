@@ -43,4 +43,5 @@ class EegRecord(BaseModel):
 
     processing_time_ms = db.Column(db.Integer, nullable=True)
 
-    prediction_result = db.relationship("PredictionResult", backref="eeg_record", lazy=True, uselist=False)
+    patient = db.relationship("Patient", back_populates="eeg_records")
+    prediction_result = db.relationship("PredictionResult", back_populates="eeg_record", lazy=True, uselist=False)

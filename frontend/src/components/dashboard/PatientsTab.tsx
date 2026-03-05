@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, User, Loader, AlertCircle, Eye, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  User,
+  Loader,
+  AlertCircle,
+  Eye,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -325,13 +333,16 @@ const PatientsTab = () => {
                 <strong>ID:</strong> {selectedPatient.id}
               </div>
               <div>
-                <strong>Identificación:</strong> {selectedPatient.identification_number}
+                <strong>Identificación:</strong>{" "}
+                {selectedPatient.identification_number}
               </div>
               <div>
-                <strong>Nombre:</strong> {selectedPatient.first_name} {selectedPatient.last_name}
+                <strong>Nombre:</strong> {selectedPatient.first_name}{" "}
+                {selectedPatient.last_name}
               </div>
               <div>
-                <strong>Fecha de nacimiento:</strong> {selectedPatient.birth_date || "-"}
+                <strong>Fecha de nacimiento:</strong>{" "}
+                {selectedPatient.birth_date || "-"}
               </div>
               <div>
                 <strong>Creado por:</strong> {selectedPatient.created_by}
@@ -353,21 +364,21 @@ const PatientsTab = () => {
           <Table>
             <TableHeader>
               <TableRow className="border-border/30 hover:bg-transparent">
-                <TableHead>ID</TableHead>
+                <TableHead>#</TableHead>
                 <TableHead>Identificación</TableHead>
                 <TableHead>Nombre</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
                 <TableHead className="hidden sm:table-cell">Apellido</TableHead>
                 <TableHead className="hidden md:table-cell">
                   Nacimiento
                 </TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((p) => (
+              {filtered.map((p, index) => (
                 <TableRow key={p.id} className="border-border/20">
                   <TableCell className="font-mono text-primary text-sm">
-                    {p.id}
+                    {index + 1}
                   </TableCell>
                   <TableCell className="font-mono text-sm">
                     {p.identification_number}
@@ -383,12 +394,14 @@ const PatientsTab = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end items-center gap-2">
-                        <Button
+                      <Button
                         variant="ghost"
                         size="sm"
                         onClick={async () => {
                           try {
-                            const data = await patientService.getPatient(String(p.id));
+                            const data = await patientService.getPatient(
+                              String(p.id),
+                            );
                             setSelectedPatient(data);
                             setDetailsOpen(true);
                           } catch (err) {
@@ -400,7 +413,8 @@ const PatientsTab = () => {
                         <Eye className="w-4 h-4" />
                       </Button>
 
-                      {(user?.role === "admin" || user?.id === p.created_by) && (
+                      {(user?.role === "admin" ||
+                        user?.id === p.created_by) && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="sm" title="Eliminar">
@@ -409,14 +423,18 @@ const PatientsTab = () => {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="glass border-border/50">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Confirmar eliminación
+                              </AlertDialogTitle>
                             </AlertDialogHeader>
                             <div className="mt-4 text-right space-x-2">
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={async () => {
                                   try {
-                                    await patientService.deletePatient(String(p.id));
+                                    await patientService.deletePatient(
+                                      String(p.id),
+                                    );
                                     await loadPatients();
                                   } catch (err) {
                                     setError(extractError(err));

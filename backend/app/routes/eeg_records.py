@@ -4,6 +4,7 @@ from app.services.eeg_record_service import EegRecordService
 from app.utils.security import get_current_user
 from app.tasks.eeg_tasks import process_eeg_record
 from app.extensions import limiter
+from app.audit import log_action
 
 eeg_records_bp = Blueprint("eeg_records", __name__)
 
@@ -28,11 +29,28 @@ def upload_eeg():
         # Enqueue background task passing the record ID
         process_eeg_record.delay(record["id"]) # type: ignore
 
+        log_action(
+            action="create",
+            resource="eeg_record",
+            details={
+                "eeg_id": record["id"],
+                "patient_id": str(patient_id),
+                "filename": file.filename
+            },
+            status="success"
+        )
+
         return jsonify(record), 202
 
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
+        log_action(
+            action="create",
+            resource="eeg_record",
+            details={"patient_id": str(patient_id)},
+            status="failed"
+        )
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         current_app.logger.exception(e)
@@ -96,8 +114,8 @@ def list_by_patient(patient_id):
 def get_eeg_status(eeg_id):
     try:
         current_user = get_current_user()
-        status = EegRecordService.get_eeg_status(eeg_id, current_user)
-        return jsonify(status), 200
+        record = EegRecordService.get_eeg_record(eeg_id, current_user)
+        return jsonify({"status": record.get("status")}), 200
     except PermissionError as e:
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
@@ -113,11 +131,26 @@ def delete_eeg_record(eeg_id):
     try:
         current_user = get_current_user()
         result = EegRecordService.delete_eeg_record(eeg_id, current_user)
+        log_action(
+            action="delete",
+            resource="eeg_record",
+            details={
+                "eeg_id": str(eeg_id),
+                "patient_id": str(result.get("patient_id"))
+            },
+            status="success"
+        )
         return jsonify({"message": f"EEG record {result['id']} deleted"}), 200
     except PermissionError as e:
+        log_action(
+            action="delete",
+            resource="eeg_record",
+            details={"eeg_id": str(eeg_id)},
+            status="failed"
+        )
         return jsonify({"error": str(e)}), 403
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)}), 404
     except Exception as e:
         current_app.logger.exception(e)
         return jsonify({"error": "Internal server error"}), 500

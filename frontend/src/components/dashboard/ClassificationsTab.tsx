@@ -35,7 +35,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface ClassificationsTabProps {
   onNavigateToUpload?: () => void;
@@ -92,7 +98,7 @@ const ClassificationsTab = ({
   const filtered = predictions.filter((c) => {
     const matchesSearch =
       String(c.id).toLowerCase().includes(search.toLowerCase()) ||
-      String(c.eeg_record_id).toLowerCase().includes(search.toLowerCase());
+      String(c.patient_identification_number || "").toLowerCase().includes(search.toLowerCase());
 
     const matchesResult =
       filters.prediction_result === undefined ||
@@ -186,13 +192,20 @@ const ClassificationsTab = ({
                 <strong>ID:</strong> {selected.id}
               </div>
               <div>
-                <strong>EEG ID:</strong> {selected.eeg_record_id}
+                <strong>Paciente:</strong> {selected.patient_identification_number || "N/A"}
+              </div>
+              <div>
+                <strong>Archivo:</strong> {selected.file_name || "N/A"}
               </div>
               <div>
                 <strong>Resultado:</strong> {selected.result}
               </div>
               <div>
-                <strong>Confianza:</strong> {(selected.confidence * 100).toFixed(1)}%
+                <strong>Fecha de clasificación:</strong> {selected.created_at ? new Date(selected.created_at).toLocaleString() : "N/A"}
+              </div>
+              <div>
+                <strong>Confianza:</strong>{" "}
+                {(selected.confidence * 100).toFixed(1)}%
               </div>
               <div>
                 <strong>Modelo:</strong> {selected.model_version}
@@ -203,7 +216,7 @@ const ClassificationsTab = ({
           )}
         </DialogContent>
       </Dialog>
-      
+
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="glass rounded-xl p-5 text-center">
@@ -223,7 +236,7 @@ const ClassificationsTab = ({
           <p className="text-sm text-muted-foreground">No Alcohólico</p>
         </div>
       </div>
-      
+
       <div className="glass rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -233,24 +246,24 @@ const ClassificationsTab = ({
           <Table>
             <TableHeader>
               <TableRow className="border-border/30 hover:bg-transparent">
-                <TableHead>ID Predicción</TableHead>
-                <TableHead>Registro EEG</TableHead>
+                <TableHead>#</TableHead>
+                <TableHead>Paciente</TableHead>
                 <TableHead>Resultado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
                 <TableHead className="hidden sm:table-cell">
                   Confianza
                 </TableHead>
                 <TableHead className="hidden md:table-cell">Fecha</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((c) => (
+              {filtered.map((c, index) => (
                 <TableRow key={c.id} className="border-border/20">
                   <TableCell className="font-mono text-primary text-sm">
-                    {c.id}
+                    {index + 1}
                   </TableCell>
                   <TableCell className="font-mono text-sm text-muted-foreground">
-                    {c.eeg_record_id}
+                    {c.patient_identification_number || "N/A"}
                   </TableCell>
                   <TableCell>
                     {c.result === "alcoholic" ? (
@@ -294,12 +307,14 @@ const ClassificationsTab = ({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end items-center gap-2">
-                        <Button
+                      <Button
                         variant="ghost"
                         size="sm"
                         onClick={async () => {
                           try {
-                            const data = await eegService.getPredictionById(String(c.id));
+                            const data = await eegService.getPredictionById(
+                              String(c.id),
+                            );
                             setSelected(data);
                             setDetailsOpen(true);
                           } catch (err) {
@@ -319,25 +334,30 @@ const ClassificationsTab = ({
                           </AlertDialogTrigger>
                           <AlertDialogContent className="glass border-border/50">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Confirmar eliminación
+                              </AlertDialogTitle>
                             </AlertDialogHeader>
-                              <div className="mt-4 text-right space-x-2">
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={async () => {
-                                    try {
-                                      await eegService.deletePrediction(String(c.id));
-                                      await loadPredictions();
-                                    } catch (err) {
-                                      // better error extraction
-                                      const { extractError } = await import("@/lib/utils");
-                                      setError(extractError(err));
-                                    }
-                                  }}
-                                >
-                                  Eliminar
-                                </AlertDialogAction>
-                              </div>
+                            <div className="mt-4 text-right space-x-2">
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={async () => {
+                                  try {
+                                    await eegService.deletePrediction(
+                                      String(c.id),
+                                    );
+                                    await loadPredictions();
+                                  } catch (err) {
+                                    // better error extraction
+                                    const { extractError } =
+                                      await import("@/lib/utils");
+                                    setError(extractError(err));
+                                  }
+                                }}
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </div>
                           </AlertDialogContent>
                         </AlertDialog>
                       )}

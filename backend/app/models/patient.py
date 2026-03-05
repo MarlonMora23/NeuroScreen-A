@@ -19,4 +19,4 @@ class Patient(BaseModel):
         nullable=False
     )
 
-    eeg_records = db.relationship("EegRecord", backref="patient", lazy=True)
+    eeg_records = db.relationship("EegRecord", back_populates="patient", lazy=True)

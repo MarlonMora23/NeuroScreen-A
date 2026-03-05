@@ -30,6 +30,8 @@ export interface EEGStatus {
 export interface PredictionResult {
   id: string;
   eeg_record_id: string;
+  patient_identification_number: string;
+  file_name: string;
   result: "alcoholic" | "non_alcoholic";
   confidence: number;
   raw_probability?: number;

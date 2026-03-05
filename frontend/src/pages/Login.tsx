@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import EEGWave from "@/components/EEGWave";
 import { useAuth } from "@/contexts/auth-context";
+import LoginNavbar from "@/components/LoginNavbar";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+      <LoginNavbar />
       {/* Background effects */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
