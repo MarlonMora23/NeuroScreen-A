@@ -9,7 +9,7 @@ Proporciona decoradores y funciones para registrar:
 
 from functools import wraps
 from typing import Optional, Any, Dict
-from flask import request, g
+from flask import request, g, has_request_context
 from .logging_config import get_audit_logger, get_technical_logger
 import traceback
 import json
@@ -31,6 +31,14 @@ class AuditLogger:
         Returns:
             Diccionario con información del cliente
         """
+        if not has_request_context():
+            return {
+                "ip": None,
+                "user_agent": "system/celery",
+                "endpoint": None,
+                "method": None,
+            }
+        
         client_ip = request.remote_addr
         if request.headers.get("X-Forwarded-For"):
             client_ip = request.headers.get("X-Forwarded-For").split(",")[0].strip()
@@ -55,18 +63,19 @@ class AuditLogger:
         user_info = {"user_id": None, "email": None}
         
         # Intentar obtener del contexto de Flask-JWT
-        try:
-            from flask_jwt_extended import get_jwt_identity
-            user_identity = get_jwt_identity()
-            user_info["user_id"] = str(user_identity)
-        except Exception:
-            pass
-        
-        # Intentar obtener del storage/sesión de la app
-        if hasattr(g, "user_id"):
-            user_info["user_id"] = str(g.user_id)
-        if hasattr(g, "user_email"):
-            user_info["email"] = g.user_email
+        if has_request_context():
+            try:
+                from flask_jwt_extended import get_jwt_identity
+                user_identity = get_jwt_identity()
+                user_info["user_id"] = str(user_identity)
+            except Exception:
+                pass
+            
+            # Intentar obtener del storage/sesión de la app
+            if hasattr(g, "user_id"):
+                user_info["user_id"] = str(g.user_id)
+            if hasattr(g, "user_email"):
+                user_info["email"] = g.user_email
         
         return user_info
     

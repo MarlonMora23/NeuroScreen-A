@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
   EEG_RECORD_UPLOAD: "/api/eeg-records/upload",
   EEG_RECORD_STATUS: (id: string) => `/api/eeg-records/${id}/status`,
   EEG_RECORD_PREDICTION: (id: string) => `/api/eeg-records/${id}/prediction`,
+  EEG_RECORD_VISUALIZATION: (id: string) => `/api/eeg-records/${id}/visualizations`,
 
   // Predictions
   PREDICTIONS: "/api/predictions",

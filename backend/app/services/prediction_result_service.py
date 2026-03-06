@@ -47,7 +47,6 @@ class PredictionResultService:
     def list_all(current_user: User) -> list:
         query = (
             PredictionResultService._base_prediction_query()
-            .filter(EegRecord.is_deleted == False)
         )
 
         query = PredictionResultService._apply_access_filter(query, current_user)
@@ -77,8 +76,7 @@ class PredictionResultService:
         query = (
             PredictionResultService._base_prediction_query()
             .filter(
-                EegRecord.patient_id == patient_uuid,
-                EegRecord.is_deleted == False,
+                EegRecord.patient_id == patient_uuid
             )
         )
 
@@ -162,6 +160,10 @@ class PredictionResultService:
         return (
             db.session.query(PredictionResult)
             .join(PredictionResult.eeg_record)
+            .filter(
+                PredictionResult.is_deleted == False,
+                EegRecord.is_deleted == False
+            )
             .options(
                 joinedload(PredictionResult.eeg_record)
                 .joinedload(EegRecord.patient)

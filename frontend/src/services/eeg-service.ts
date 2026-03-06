@@ -44,6 +44,32 @@ export interface UploadEEGInput {
   uploader_id: string;
 }
 
+export interface WaveformData {
+  timestamps_ms: number[];
+  channels: Record<string, number[]>;
+  sampling_rate: number;
+  duration_ms: number;
+}
+
+export interface TopoElectrode {
+  name: string;
+  x: number;
+  y: number;
+  importance: number;
+}
+
+export interface VisualizationResponse {
+  status: "pending" | "processing" | "completed" | "failed";
+  waveforms?: WaveformData;
+  topomap?: { electrodes: TopoElectrode[]; method: string };
+  channel_importance?: {
+    channels: string[];
+    importance: number[];
+    method: string;
+  };
+  error_msg?: string;
+}
+
 class EEGService {
   async getEEGRecords(filters?: {
     patient_id?: string;
@@ -133,6 +159,20 @@ class EEGService {
 
   async getPredictionById(id: string): Promise<PredictionResult> {
     return httpClient.get<PredictionResult>(API_ENDPOINTS.PREDICTION_BY_ID(id));
+  }
+
+  async getVisualization(
+    id: string,
+    types: string,
+    channels: string[],
+  ): Promise<VisualizationResponse> {
+    const params = new URLSearchParams({ types });
+    if (channels.length > 0) {
+      params.set("channels", channels.join(","));
+    }
+    return httpClient.get<VisualizationResponse>(
+      `${API_ENDPOINTS.EEG_RECORD_VISUALIZATION(id)}?${params.toString()}`,
+    );
   }
 
   async deletePrediction(id: string): Promise<void> {

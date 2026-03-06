@@ -2,15 +2,7 @@ import gc
 import numpy as np
 import pandas as pd
 from scipy.signal import butter, filtfilt
-
-PREDEFINED_CHANNELS = [
-    "F1", "F2", "F6", "FT7", "FT8", "FC3", "FC4", "FCZ",             # Frontal
-    "O1", "O2",                                                      # Occipital
-    "C1", "C2", "C3", "C4", "C5", "CP2", "CP3", "CP5", "CP6", "CPZ", # Central
-    "AF7", "AF8",
-    "P1", "P4", "P5", "P6", "P7", "P8", "PO1", "PO7", "PO8",          # Parietal
-    "T7", "T8", "TP7"
-    ]
+from app.ml.eeg_config import CHANNELS, SAMPLING_RATE
 
 def normalize_signal(signal: np.ndarray) -> np.ndarray:
     """Z-score normalization of a signal"""
@@ -60,7 +52,7 @@ def get_channel_signal(trial_data, ch, start_idx, win_size) -> np.ndarray:
 def process_channel(signal, use_bands, channel_idx, sample) -> int:
     """Process one channel: extract frequency bands or raw signal"""
     if use_bands:
-        bands = extract_frequency_bands(signal, fs=256)
+        bands = extract_frequency_bands(signal, fs=SAMPLING_RATE)
         for band_name in ['raw', 'delta', 'theta', 'alpha', 'beta', 'gamma']:
             if band_name in bands:
                 band_signal = normalize_signal(bands[band_name])
@@ -75,7 +67,6 @@ def process_channel(signal, use_bands, channel_idx, sample) -> int:
 
 def build_tensor_from_parquet(
     parquet_path: str,
-    channels: list[str] = None,
     win_size: int = 256,
     step_size: int = 256,
     use_bands: bool = True
@@ -83,16 +74,12 @@ def build_tensor_from_parquet(
     """
     Build 4D tensor (N, C, T, 1) from a single parquet EEG file.
     """
-
-    if channels is None:
-        channels = PREDEFINED_CHANNELS  # 33 exactos
-
     df = pd.read_parquet(parquet_path)
 
     available_channels = set(df['channel'].unique())
-    channels_to_use = channels
+    channels_to_use = CHANNELS
 
-    missing_channels = [ch for ch in channels if ch not in available_channels]
+    missing_channels = [ch for ch in channels_to_use if ch not in available_channels]
     if missing_channels:
         raise ValueError(f"Missing required channels: {missing_channels}")
 

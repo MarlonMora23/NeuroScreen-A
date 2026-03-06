@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -22,7 +22,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { eegService, PredictionResult } from "@/services/eeg-service";
+import {
+  eegService,
+  PredictionResult,
+  VisualizationResponse,
+} from "@/services/eeg-service";
 import { extractError } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { Eye, Trash2 } from "lucide-react";
@@ -42,6 +46,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Microscope } from "lucide-react";
+import { EegVisualizationPanel } from "@/components/EegVisualizationPanel";
 
 interface ClassificationsTabProps {
   onNavigateToUpload?: () => void;
@@ -65,6 +71,7 @@ const ClassificationsTab = ({
   });
   const [selected, setSelected] = useState<PredictionResult | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [vizTarget, setVizTarget] = useState<PredictionResult | null>(null);
   const { user } = useAuth();
 
   // Cargar predicciones
@@ -98,7 +105,9 @@ const ClassificationsTab = ({
   const filtered = predictions.filter((c) => {
     const matchesSearch =
       String(c.id).toLowerCase().includes(search.toLowerCase()) ||
-      String(c.patient_identification_number || "").toLowerCase().includes(search.toLowerCase());
+      String(c.patient_identification_number || "")
+        .toLowerCase()
+        .includes(search.toLowerCase());
 
     const matchesResult =
       filters.prediction_result === undefined ||
@@ -192,7 +201,8 @@ const ClassificationsTab = ({
                 <strong>ID:</strong> {selected.id}
               </div>
               <div>
-                <strong>Paciente:</strong> {selected.patient_identification_number || "N/A"}
+                <strong>Paciente:</strong>{" "}
+                {selected.patient_identification_number || "N/A"}
               </div>
               <div>
                 <strong>Archivo:</strong> {selected.file_name || "N/A"}
@@ -201,7 +211,10 @@ const ClassificationsTab = ({
                 <strong>Resultado:</strong> {selected.result}
               </div>
               <div>
-                <strong>Fecha de clasificación:</strong> {selected.created_at ? new Date(selected.created_at).toLocaleString() : "N/A"}
+                <strong>Fecha de clasificación:</strong>{" "}
+                {selected.created_at
+                  ? new Date(selected.created_at).toLocaleString()
+                  : "N/A"}
               </div>
               <div>
                 <strong>Confianza:</strong>{" "}
@@ -310,6 +323,14 @@ const ClassificationsTab = ({
                       <Button
                         variant="ghost"
                         size="sm"
+                        title="Ver interpretabilidad EEG"
+                        onClick={() => setVizTarget(c)}
+                      >
+                        <Microscope className="w-4 h-4 text-primary" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={async () => {
                           try {
                             const data = await eegService.getPredictionById(
@@ -379,6 +400,13 @@ const ClassificationsTab = ({
           </Table>
         )}
       </div>
+
+      {vizTarget && (
+        <EegVisualizationPanel
+          prediction={vizTarget}
+          onClose={() => setVizTarget(null)}
+        />
+      )}
     </motion.div>
   );
 };

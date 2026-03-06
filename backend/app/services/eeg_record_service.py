@@ -1,6 +1,8 @@
 import os
 import uuid
 from uuid import UUID
+
+from flask import jsonify
 from app.extensions import db
 from app.models.eeg_record import EegRecord, EegStatus, FILE_TYPE
 from app.models.patient import Patient
@@ -152,6 +154,7 @@ class EegRecordService:
             eeg_uuid = UUID(str(eeg_id))
         except Exception:
             raise ValueError("EEG record not found")
+        
         eeg = db.session.get(EegRecord, eeg_uuid)
 
         if not eeg or eeg.is_deleted:
@@ -169,6 +172,73 @@ class EegRecordService:
             "processing_time_ms": eeg.processing_time_ms,
             "error_msg": eeg.error_msg if eeg.status == EegStatus.FAILED else None,
         }
+    
+    @staticmethod
+    def get_eeg_visualizations(eeg_record_id: str, types: str, channels: str, current_user: User) -> dict:
+        from app.models.prediction_visualization import PredictionVisualization
+
+        try:
+            eeg_uuid = UUID(str(eeg_record_id))
+        except Exception:
+            raise ValueError("EEG record not found")
+        
+        eeg_record = db.session.get(EegRecord, eeg_uuid)
+
+        if not eeg_record:
+            raise ValueError("EEG record not found")
+
+        # Verificar permisos (reutiliza tu lógica existente)
+        patient = db.session.get(Patient, eeg_record.patient_id)
+        if not patient or patient.is_deleted:
+            raise ValueError("Patient not found")
+
+        if (
+            current_user.role != UserRole.ADMIN
+            and patient.created_by != current_user.id
+        ):
+            raise PermissionError("Not allowed to access this patient's records")
+
+        prediction = eeg_record.prediction_result  
+        if not prediction:
+            raise ValueError("No prediction found for this record")
+
+        viz = prediction.visualization
+        if not viz:
+            return {"status": "pending", "data": None}  # No visualization yet, but prediction exists
+
+        if viz.status in ("pending", "processing"):
+            return {"status": viz.status, "data": None}  # Still being generated
+
+        if viz.status == "failed":
+            return {"status": "failed", "error_msg": viz.error_msg}  # Generation failed
+
+        # Filtrar por tipos solicitados
+        requested_types: set[str] = {t.strip() for t in types.split(",")}
+
+        # Filtrar canales específicos de waveforms (reduce payload)
+        requested_channels: set[str] | None = (set(channels.split(",")) if channels else None)
+
+        response_data = {"status": "completed"}
+
+        if "waveforms" in requested_types and viz.waveforms_data:
+            waveforms = viz.waveforms_data
+            if requested_channels:
+                waveforms = {
+                    **{k: v for k, v in waveforms.items() if k != "channels"},
+                    "channels": {
+                        ch: data for ch, data in waveforms["channels"].items()
+                        if ch in requested_channels  
+                    }
+                }
+            response_data["waveforms"] = waveforms
+
+        if "topomap" in requested_types and viz.topomap_data:
+            response_data["topomap"] = viz.topomap_data
+
+        if "channel_importance" in requested_types and viz.channel_importance_data:
+            response_data["channel_importance"] = viz.channel_importance_data
+
+        return response_data
     
     @staticmethod
     def delete_eeg_record(eeg_id: str, current_user: User) -> dict:

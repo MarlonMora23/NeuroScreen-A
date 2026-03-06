@@ -25,3 +25,4 @@ class PredictionResult(BaseModel):
     model_version = db.Column(db.String(120), nullable=False)
 
     eeg_record = db.relationship("EegRecord", back_populates="prediction_result")
+    visualization = db.relationship("PredictionVisualization", back_populates="prediction", uselist=False, lazy="select", cascade="all, delete-orphan")

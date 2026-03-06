@@ -109,7 +109,7 @@ def list_by_patient(patient_id):
         return jsonify({"error": "Internal server error"}), 500
     
 @eeg_records_bp.route("/eeg-records/<uuid:eeg_id>/status", methods=["GET"])
-@limiter.limit("100 per minute")
+@limiter.limit("120 per minute")
 @jwt_required()
 def get_eeg_status(eeg_id):
     try:
@@ -123,6 +123,33 @@ def get_eeg_status(eeg_id):
     except Exception as e:
         current_app.logger.exception(e)
         return jsonify({"error": "Internal server error"}), 500
+    
+@eeg_records_bp.route("/eeg-records/<uuid:eeg_record_id>/visualizations", methods=["GET"])
+@limiter.limit("60 per minute")
+@jwt_required()
+def get_eeg_visualizations(eeg_record_id: str):
+    """
+    Retorna las visualizaciones generadas para un EEG record.
+    Soporta filtrado por tipo para evitar payloads grandes.
+
+    Query params:
+      - types: comma-separated list of "waveforms,topomap,channel_importance"
+      - channels: comma-separated list of channel names (solo aplica a waveforms)
+    """
+    try:
+        current_user = get_current_user()
+        types = request.args.get("types", "waveforms,topomap,channel_importance")
+        channels = request.args.get("channels")
+        response_data = EegRecordService.get_eeg_visualizations(eeg_record_id, types, channels, current_user)
+    except PermissionError as e:
+        return jsonify({"error": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.exception(e)
+        return jsonify({"error": "Internal server error"}), 500
+
+    return jsonify(response_data), 200
     
 @eeg_records_bp.route("/eeg-records/<uuid:eeg_id>", methods=["DELETE"])
 @limiter.limit("50 per hour")

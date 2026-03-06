@@ -39,7 +39,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (err) {
         console.error("Error checking authentication:", err);
+        // Verificar si el error es por sesión expirada (401)
+        if (err instanceof Error && err.message.includes("401")) {
+          // Solo establecer el mensaje si no está ya guardado
+          if (!window.sessionStorage.getItem("sessionExpired")) {
+            window.sessionStorage.setItem(
+              "sessionExpired",
+              "Tu sesión expiró por inactividad. Por favor, inicia sesión nuevamente.",
+            );
+          }
+        }
         authService.clearToken();
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -51,16 +62,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const handleUnauthorized = () => {
       // A este punto solo llegamos si hay un token pero está expirado
-      window.sessionStorage.setItem(
-        "sessionExpired",
-        "Tu sesión expiró por inactividad. Por favor, inicia sesión nuevamente.",
-      );
+      // Solo establecer si no está ya guardado para evitar sobrescribir
+      if (!window.sessionStorage.getItem("sessionExpired")) {
+        window.sessionStorage.setItem(
+          "sessionExpired",
+          "Tu sesión expiró por inactividad. Por favor, inicia sesión nuevamente.",
+        );
+      }
 
       authService.clearToken();
       setUser(null);
 
-      // Redirección directa
-      window.location.href = "/login";
+      // Solo redirigir si no estamos ya en /login
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     };
 
     window.addEventListener("unauthorized", handleUnauthorized);
@@ -81,6 +97,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const currentUser = await authService.getCurrentUser();
         setUser(currentUser);
       }
+      // Limpiar el mensaje de sesión expirada solo después de login exitoso
+      window.sessionStorage.removeItem("sessionExpired");
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Error al iniciar sesión";

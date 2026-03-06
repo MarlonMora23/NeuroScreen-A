@@ -25,7 +25,7 @@ const Login = () => {
 
     if (message) {
       setSessionMessage(message);
-      sessionStorage.removeItem("sessionExpired");
+      // No eliminar el mensaje aquí; se eliminará después de login exitoso
     }
   }, []);
 
