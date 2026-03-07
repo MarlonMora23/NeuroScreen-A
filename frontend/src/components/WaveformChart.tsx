@@ -1,86 +1,165 @@
-import { motion } from "framer-motion";
+/**
+ * WaveformChart.tsx
+ *
+ * Single-channel EEG waveform strip.
+ *
+ * Layout (horizontal, fixed columns so nothing overlaps):
+ *  [channel label 52px] [y-axis 38px] [SVG flex-1] [time label 52px]
+ *
+ * The y-axis column shows yMax / cursor-value / yMin at top-center-bottom.
+ * The cursor value replaces the "0" center label while hovering — it never
+ * floats over the signal.
+ */
 
-// ─── Waveform SVG Component ───────────────────────────────────────────────────
+import { useMemo } from "react";
+import { SAMPLE_RATE } from "./useWaveformControls";
+
+const W = 400;
+const H = 56;
+const PAD_V = 4; // top & bottom padding inside SVG
+const INNER_H = H - PAD_V * 2;
+
+interface WaveformChartProps {
+  channelName: string;
+  values: number[];
+  windowStart: number;
+  samplesVisible: number;
+  color: string;
+  importance?: number;
+  /** null = auto per-channel y-scale */
+  amplitudeScale: number | null;
+  /** [0,1] fraction of the SVG width, or null */
+  cursorFraction: number | null;
+  onCursorMove: (f: number | null) => void;
+}
 
 export function WaveformChart({
   channelName,
   values,
-  timestamps,
-  zoomLevel,
+  windowStart,
+  samplesVisible,
   color,
   importance,
-}: {
-  channelName: string;
-  values: number[];
-  timestamps: number[];
-  zoomLevel: number;
-  color: string;
-  importance?: number;
-}) {
-  const W = 320;
-  const H = 52;
-  const PADDING = { top: 6, bottom: 6, left: 0, right: 0 };
-
-  // Zoom: mostrar solo la fracción central del tiempo
+  amplitudeScale,
+  cursorFraction,
+  onCursorMove,
+}: WaveformChartProps) {
   const totalSamples = values.length;
-  const samplesVisible = Math.max(8, Math.round(totalSamples / zoomLevel));
-  const startIdx = Math.floor((totalSamples - samplesVisible) / 2);
-  const visibleValues = values.slice(startIdx, startIdx + samplesVisible);
+  const safeStart = Math.min(
+    windowStart,
+    Math.max(0, totalSamples - samplesVisible),
+  );
+  const visibleValues = values.slice(safeStart, safeStart + samplesVisible);
 
-  const min = Math.min(...visibleValues);
-  const max = Math.max(...visibleValues);
-  const range = max - min || 1;
+  // ── Y scale ───────────────────────────────────────────────────────────────
+  const [yMin, yMax] = useMemo(() => {
+    if (amplitudeScale !== null) return [-amplitudeScale, amplitudeScale];
+    const sorted = [...values].sort((a, b) => a - b);
+    let lo = sorted[Math.floor(sorted.length * 0.05)] ?? -1;
+    let hi = sorted[Math.floor(sorted.length * 0.95)] ?? 1;
+    if (hi - lo < 1e-6) {
+      lo -= 1;
+      hi += 1;
+    }
+    return [lo, hi];
+  }, [values, amplitudeScale]); 
+  const yRange = yMax - yMin;
 
+  // ── Polyline ──────────────────────────────────────────────────────────────
+  const n = visibleValues.length;
   const pts = visibleValues
     .map((v, i) => {
-      const x =
-        PADDING.left +
-        (i / (samplesVisible - 1)) * (W - PADDING.left - PADDING.right);
-      const y =
-        PADDING.top +
-        (1 - (v - min) / range) * (H - PADDING.top - PADDING.bottom);
-      return `${x},${y}`;
+      const x = (i / Math.max(n - 1, 1)) * W;
+      const vClamped = Math.max(yMin, Math.min(yMax, v));
+      const y = PAD_V + (1 - (vClamped - yMin) / yRange) * INNER_H;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
 
-  const durationLabel = `${(samplesVisible / 256).toFixed(2)}s`;
+  // ── Zero line ─────────────────────────────────────────────────────────────
+  const zeroY = PAD_V + (1 - (0 - yMin) / yRange) * INNER_H;
+  const showZero = zeroY >= PAD_V && zeroY <= H - PAD_V;
+
+  // ── Cursor ────────────────────────────────────────────────────────────────
+  const cursorSvgX = cursorFraction !== null ? cursorFraction * W : null;
+  const cursorValue =
+    cursorFraction !== null
+      ? (visibleValues[Math.round(cursorFraction * (n - 1))] ?? null)
+      : null;
+
+  const startMs = ((safeStart / SAMPLE_RATE) * 1000).toFixed(0);
+  const endMs = (((safeStart + samplesVisible) / SAMPLE_RATE) * 1000).toFixed(
+    0,
+  );
 
   return (
-    <div className="flex items-center gap-3 py-2 px-3 rounded-lg bg-secondary/20 hover:bg-secondary/30 transition-colors group">
+    <div className="flex items-stretch gap-0 py-1 px-2 rounded-lg bg-secondary/20 hover:bg-secondary/30 transition-colors group">
       {/* Channel label */}
-      <div className="w-14 shrink-0">
-        <span className="text-xs font-mono font-semibold text-foreground/80">
+      <div className="w-[52px] shrink-0 flex flex-col justify-center pr-1 select-none">
+        <span className="text-[11px] font-mono font-semibold text-foreground/80 leading-none truncate">
           {channelName}
         </span>
         {importance !== undefined && (
-          <div className="mt-0.5 w-full h-1 rounded-full bg-secondary overflow-hidden">
+          <div className="mt-1.5 w-full h-[3px] rounded-full bg-secondary/60 overflow-hidden">
             <div
-              className="h-full rounded-full transition-all"
+              className="h-full rounded-full"
               style={{ width: `${importance * 100}%`, backgroundColor: color }}
             />
           </div>
         )}
       </div>
 
+      {/* Y-axis: top=yMax, middle=cursor or zero, bottom=yMin — never overlaps chart */}
+      <div className="w-[38px] shrink-0 flex flex-col justify-between items-end pr-1.5 py-[4px] select-none border-r border-border/10">
+        <span className="text-[9px] font-mono text-muted-foreground/60 leading-none">
+          {yMax.toFixed(1)}
+        </span>
+        {cursorValue !== null ? (
+          <span
+            className="text-[9px] font-mono font-semibold leading-none"
+            style={{ color }}
+          >
+            {cursorValue.toFixed(2)}
+          </span>
+        ) : (
+          <span className="text-[9px] font-mono text-muted-foreground/25 leading-none">
+            ·
+          </span>
+        )}
+        <span className="text-[9px] font-mono text-muted-foreground/60 leading-none">
+          {yMin.toFixed(1)}
+        </span>
+      </div>
+
       {/* SVG chart */}
-      <div className="flex-1 overflow-hidden">
+      <div
+        className="flex-1 overflow-hidden cursor-crosshair"
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          onCursorMove(
+            Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)),
+          );
+        }}
+        onMouseLeave={() => onCursorMove(null)}
+      >
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
-          className="h-[52px]"
+          className="h-[52px] block"
         >
-          {/* Zero line */}
-          <line
-            x1={0}
-            y1={H / 2}
-            x2={W}
-            y2={H / 2}
-            stroke="currentColor"
-            strokeOpacity={0.08}
-            strokeWidth={1}
-          />
-          {/* Signal */}
+          {showZero && (
+            <line
+              x1={0}
+              y1={zeroY}
+              x2={W}
+              y2={zeroY}
+              stroke="currentColor"
+              strokeOpacity={0.1}
+              strokeWidth={1}
+              strokeDasharray="3,3"
+            />
+          )}
           <polyline
             points={pts}
             fill="none"
@@ -89,13 +168,26 @@ export function WaveformChart({
             strokeLinecap="round"
             strokeLinejoin="round"
           />
+          {cursorSvgX !== null && (
+            <line
+              x1={cursorSvgX}
+              y1={0}
+              x2={cursorSvgX}
+              y2={H}
+              stroke="white"
+              strokeOpacity={0.3}
+              strokeWidth={1}
+            />
+          )}
         </svg>
       </div>
 
-      {/* Duration */}
-      <span className="text-[10px] font-mono text-muted-foreground w-9 text-right shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        {durationLabel}
-      </span>
+      {/* Time window — only on hover, right column */}
+      <div className="w-[56px] shrink-0 flex items-center justify-end pl-1 select-none">
+        <span className="text-[9px] font-mono text-muted-foreground/40 text-right leading-[1.3] opacity-0 group-hover:opacity-100 transition-opacity">
+          {startMs}–{endMs}ms
+        </span>
+      </div>
     </div>
   );
 }

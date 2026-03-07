@@ -95,7 +95,7 @@ export function TopoMap({
           const py = CY - el.y * R;
           const color = getColor(el.importance);
           const isHovered = hovered === el.name;
-          const radius = isHovered ? 12 : 10;
+          const radius = isHovered ? 11 : 8;
 
           return (
             <g
@@ -156,7 +156,7 @@ export function TopoMap({
 
       {/* Color scale legend */}
       <div className="flex items-center gap-2 w-[280px]">
-        <span className="text-[10px] text-muted-foreground font-mono">
+        <span className="text-xs text-muted-foreground font-mono">
           Bajo
         </span>
         <div
@@ -166,7 +166,7 @@ export function TopoMap({
               "linear-gradient(to right, rgb(30,80,200), rgb(30,200,255), rgb(60,255,100), rgb(255,200,0), rgb(255,0,0))",
           }}
         />
-        <span className="text-[10px] text-muted-foreground font-mono">
+        <span className="text-xs text-muted-foreground font-mono">
           Alto
         </span>
       </div>

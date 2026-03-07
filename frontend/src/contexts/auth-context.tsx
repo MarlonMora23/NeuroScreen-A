@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (!window.sessionStorage.getItem("sessionExpired")) {
             window.sessionStorage.setItem(
               "sessionExpired",
-              "Tu sesión expiró por inactividad. Por favor, inicia sesión nuevamente.",
+              "Tu sesión expiró por inactividad.",
             );
           }
         }
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!window.sessionStorage.getItem("sessionExpired")) {
         window.sessionStorage.setItem(
           "sessionExpired",
-          "Tu sesión expiró por inactividad. Por favor, inicia sesión nuevamente.",
+          "Tu sesión expiró por inactividad.",
         );
       }
 

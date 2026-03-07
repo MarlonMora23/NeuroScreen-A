@@ -7,9 +7,6 @@ import {
   BarChart3,
   ChevronDown,
   ChevronUp,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
   Info,
   Loader2,
   AlertCircle,
@@ -18,22 +15,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  eegService,
-  PredictionResult,
-  VisualizationResponse,
-} from "@/services/eeg-service";
+import { eegService, VisualizationResponse } from "@/services/eeg-service";
 import {
   ALL_CHANNELS,
   CHANNEL_GROUPS,
   ZOOM_LEVELS,
-  ZOOM_LABELS,
   EegVisualizationPanelProps,
   TabId,
 } from "./eeg-constants";
-import { WaveformChart } from "./WaveformChart";
 import { TopoMap } from "./TopoMap";
 import { ChannelImportanceChart } from "./ChannelImportanceChart";
+import { WaveformsTabContent } from "./WaveformsTabContent";
+import { useWaveformControls } from "./useWaveformControls";
 
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 
@@ -50,10 +43,6 @@ export function EegVisualizationPanel({
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [channelSearch, setChannelSearch] = useState("");
   const [expandedGroup, setExpandedGroup] = useState<string | null>("Frontal");
-
-  // Zoom
-  const [zoomIdx, setZoomIdx] = useState(2); // default: 1x = 1s
-  const zoomLevel = ZOOM_LEVELS[zoomIdx];
 
   // Waveforms lazy loading
   const [waveformsLoading, setWaveformsLoading] = useState(false);
@@ -193,6 +182,32 @@ export function EegVisualizationPanel({
     },
   ];
 
+  const totalSamples = vizData?.waveforms
+    ? (Object.values(vizData.waveforms.channels)[0]?.length ?? 0)
+    : 0;
+
+  const {
+    zoomIdx,
+    setZoomIdx,
+    zoomAvailable,
+    samplesVisible,
+    windowStart,
+    isPlaying,
+    setIsPlaying,
+    speedIdx,
+    setSpeedIdx,
+    ampIdx,
+    handleSetAmpIdx,
+    amplitudeScale,
+    cursorFraction,
+    setCursorFraction,
+    overlayMode,
+    setOverlayMode,
+    scrubberFraction,
+    scrubTo,
+    attachWheelRef,
+  } = useWaveformControls(totalSamples);
+
   return (
     <AnimatePresence>
       <motion.div
@@ -228,19 +243,19 @@ export function EegVisualizationPanel({
                   {prediction.result === "alcoholic" ? (
                     <Badge
                       variant="outline"
-                      className="text-[10px] h-4 px-1.5 bg-destructive/15 text-destructive border-destructive/30 gap-1"
+                      className="text-xs h-4 px-1.5 bg-destructive/15 text-destructive border-destructive/30 gap-1"
                     >
                       <AlertTriangle className="w-2.5 h-2.5" /> Alcohólico
                     </Badge>
                   ) : (
                     <Badge
                       variant="outline"
-                      className="text-[10px] h-4 px-1.5 bg-success/15 text-success border-success/30 gap-1"
+                      className="text-xs h-4 px-1.5 bg-success/15 text-success border-success/30 gap-1"
                     >
                       <CheckCircle2 className="w-2.5 h-2.5" /> No Alcohólico
                     </Badge>
                   )}
-                  <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                  <Badge variant="outline" className="text-xs h-4 px-1.5">
                     {(prediction.confidence * 100).toFixed(1)}% confianza
                   </Badge>
                 </div>
@@ -301,8 +316,9 @@ export function EegVisualizationPanel({
                     <div className="flex items-center gap-2 mb-4 px-2">
                       <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       <p className="text-xs text-muted-foreground">
-                         Método usado: {vizData.channel_importance.method}. 
-                         Valores cercanos a 1 indican mayor influencia en la clasificación.
+                        Método usado: {vizData.channel_importance.method}.
+                        Valores cercanos a 1 indican mayor influencia en la
+                        clasificación.
                       </p>
                     </div>
                     {vizData?.channel_importance ? (
@@ -356,296 +372,225 @@ export function EegVisualizationPanel({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 8 }}
                     transition={{ duration: 0.15 }}
-                    className="flex flex-col h-full"
+                    className="h-full"
                   >
-                    <div className="flex items-center gap-2 mb-4 px-2">
-                      <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                      <p className="text-xs text-muted-foreground">
-                        Representación de las ondas de los canales seleccionados
-                      </p>
-                    </div>
-                    {/* Left: Channel selector */}
-                    <div className="h-full flex ">
-                      <div className="w-62 border-r border-border/30 flex flex-col shrink-0">
-                        <div className="pr-3 pt-3 pb-2 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-foreground/80">
-                              Canales
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {selectedChannels.length}/{ALL_CHANNELS.length}
-                            </span>
-                          </div>
-                          <input
-                            type="text"
-                            placeholder="Buscar canal..."
-                            value={channelSearch}
-                            onChange={(e) => setChannelSearch(e.target.value)}
-                            className="w-full text-xs px-2.5 py-1.5 rounded-md bg-secondary/40 border border-border/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-                          />
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() =>
-                                setSelectedChannels([...ALL_CHANNELS])
-                              }
-                              className="flex-1 text-[10px] py-1 rounded bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              Todos
-                            </button>
-                            <button
-                              onClick={() => setSelectedChannels([])}
-                              className="flex-1 text-[10px] py-1 rounded bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              Ninguno
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto pr-2 pb-3">
-                          {filteredChannels ? (
-                            // Search results: flat list
-                            <div className="space-y-0.5">
-                              {filteredChannels.map((ch) => {
-                                const imp = getImportance(ch);
-                                return (
-                                  <button
-                                    key={ch}
-                                    onClick={() => toggleChannel(ch)}
-                                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                                      selectedChannels.includes(ch)
-                                        ? "bg-primary/10 text-primary"
-                                        : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
-                                    }`}
-                                  >
-                                    <div
-                                      className="w-2 h-2 rounded-full shrink-0"
-                                      style={{
-                                        backgroundColor: getChannelColor(ch),
-                                      }}
-                                    />
-                                    <span className="font-mono font-medium">
-                                      {ch}
-                                    </span>
-                                    {imp !== undefined && (
-                                      <span className="ml-auto text-[10px] opacity-60">
-                                        {imp.toFixed(2)}
-                                      </span>
-                                    )}
-                                  </button>
-                                );
-                              })}
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-center gap-2 pb-4 px-2">
+                        <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <p className="text-xs text-muted-foreground">
+                          Selecciona los canales que deseas visualizar.
+                        </p>
+                      </div>
+                      {/* Left: Channel selector */}
+                      <div id="content" className="flex flex-1 overflow-hidden">
+                        <div className="w-62 border-r border-border/30 flex flex-col shrink-0">
+                          <div className="pr-3 pt-3 pb-2 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-foreground/80">
+                                Canales
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {selectedChannels.length}/{ALL_CHANNELS.length}
+                              </span>
                             </div>
-                          ) : (
-                            // Grouped
-                            Object.entries(CHANNEL_GROUPS).map(
-                              ([group, chs]) => {
-                                const allSel = chs.every((ch) =>
-                                  selectedChannels.includes(ch),
-                                );
-                                const someSel = chs.some((ch) =>
-                                  selectedChannels.includes(ch),
-                                );
-                                const isOpen = expandedGroup === group;
-                                return (
-                                  <div key={group} className="mb-1">
+                            <input
+                              type="text"
+                              placeholder="Buscar canal..."
+                              value={channelSearch}
+                              onChange={(e) => setChannelSearch(e.target.value)}
+                              className="w-full text-xs px-2.5 py-1.5 rounded-md bg-secondary/40 border border-border/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                            />
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() =>
+                                  setSelectedChannels([...ALL_CHANNELS])
+                                }
+                                className="flex-1 text-[11px] py-1 rounded bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                Todos
+                              </button>
+                              <button
+                                onClick={() => setSelectedChannels([])}
+                                className="flex-1 text-[11px] py-1 rounded bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                Ninguno
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex-1 overflow-y-auto pr-2 pb-3">
+                            {filteredChannels ? (
+                              // Search results: flat list
+                              <div className="space-y-0.5">
+                                {filteredChannels.map((ch) => {
+                                  const imp = getImportance(ch);
+                                  return (
                                     <button
-                                      onClick={() =>
-                                        setExpandedGroup(isOpen ? null : group)
-                                      }
-                                      className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-secondary/40 transition-colors group"
+                                      key={ch}
+                                      onClick={() => toggleChannel(ch)}
+                                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                                        selectedChannels.includes(ch)
+                                          ? "bg-primary/10 text-primary"
+                                          : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+                                      }`}
                                     >
                                       <div
-                                        className="w-2 h-2 rounded-sm shrink-0"
+                                        className="w-2 h-2 rounded-full shrink-0"
                                         style={{
-                                          backgroundColor: getChannelColor(
-                                            chs[0],
-                                          ),
+                                          backgroundColor: getChannelColor(ch),
                                         }}
                                       />
-                                      <span className="text-xs font-medium text-foreground/70 flex-1 text-left">
-                                        {group}
+                                      <span className="font-mono font-medium">
+                                        {ch}
                                       </span>
-                                      <span
-                                        className={`text-[10px] ${someSel ? "text-primary" : "text-muted-foreground"}`}
-                                      >
-                                        {
-                                          chs.filter((ch) =>
-                                            selectedChannels.includes(ch),
-                                          ).length
-                                        }
-                                        /{chs.length}
-                                      </span>
-                                      {isOpen ? (
-                                        <ChevronUp className="w-3 h-3 text-muted-foreground" />
-                                      ) : (
-                                        <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                                      {imp !== undefined && (
+                                        <span className="ml-auto text-[11px] opacity-60">
+                                          {imp.toFixed(2)}
+                                        </span>
                                       )}
                                     </button>
-
-                                    <AnimatePresence>
-                                      {isOpen && (
-                                        <motion.div
-                                          initial={{ height: 0, opacity: 0 }}
-                                          animate={{
-                                            height: "auto",
-                                            opacity: 1,
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              // Grouped
+                              Object.entries(CHANNEL_GROUPS).map(
+                                ([group, chs]) => {
+                                  const allSel = chs.every((ch) =>
+                                    selectedChannels.includes(ch),
+                                  );
+                                  const someSel = chs.some((ch) =>
+                                    selectedChannels.includes(ch),
+                                  );
+                                  const isOpen = expandedGroup === group;
+                                  return (
+                                    <div key={group} className="mb-1">
+                                      <button
+                                        onClick={() =>
+                                          setExpandedGroup(
+                                            isOpen ? null : group,
+                                          )
+                                        }
+                                        className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-secondary/40 transition-colors group"
+                                      >
+                                        <div
+                                          className="w-2 h-2 rounded-sm shrink-0"
+                                          style={{
+                                            backgroundColor: getChannelColor(
+                                              chs[0],
+                                            ),
                                           }}
-                                          exit={{ height: 0, opacity: 0 }}
-                                          transition={{ duration: 0.15 }}
-                                          className="overflow-hidden"
+                                        />
+                                        <span className="text-xs font-medium text-foreground/70 flex-1 text-left">
+                                          {group}
+                                        </span>
+                                        <span
+                                          className={`text-[11px] ${someSel ? "text-primary" : "text-muted-foreground"}`}
                                         >
-                                          <div
-                                            className="pl-1 mb-1 cursor-pointer"
-                                            onClick={() =>
-                                              toggleGroupChannels(group)
-                                            }
+                                          {
+                                            chs.filter((ch) =>
+                                              selectedChannels.includes(ch),
+                                            ).length
+                                          }
+                                          /{chs.length}
+                                        </span>
+                                        {isOpen ? (
+                                          <ChevronUp className="w-3 h-3 text-muted-foreground" />
+                                        ) : (
+                                          <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                                        )}
+                                      </button>
+
+                                      <AnimatePresence>
+                                        {isOpen && (
+                                          <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{
+                                              height: "auto",
+                                              opacity: 1,
+                                            }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="overflow-hidden"
                                           >
-                                            <span className="text-[10px] px-2 py-0.5 rounded text-muted-foreground hover:text-primary transition-colors">
-                                              {allSel
-                                                ? "Deseleccionar grupo"
-                                                : "Seleccionar grupo"}
-                                            </span>
-                                          </div>
-                                          <div className="space-y-0.5 pl-1">
-                                            {chs.map((ch) => {
-                                              const imp = getImportance(ch);
-                                              return (
-                                                <button
-                                                  key={ch}
-                                                  onClick={() =>
-                                                    toggleChannel(ch)
-                                                  }
-                                                  className={`w-full flex items-center gap-2 px-2 py-1 rounded text-xs transition-colors ${
-                                                    selectedChannels.includes(
-                                                      ch,
-                                                    )
-                                                      ? "bg-primary/10 text-primary"
-                                                      : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground"
-                                                  }`}
-                                                >
-                                                  <span className="font-mono">
-                                                    {ch}
-                                                  </span>
-                                                  {imp !== undefined && (
-                                                    <span className="ml-auto text-[10px] opacity-50">
-                                                      {imp.toFixed(2)}
+                                            <div
+                                              className="pl-1 mb-1 cursor-pointer"
+                                              onClick={() =>
+                                                toggleGroupChannels(group)
+                                              }
+                                            >
+                                              <span className="text-[11px] px-2 py-0.5 rounded text-muted-foreground hover:text-primary transition-colors">
+                                                {allSel
+                                                  ? "Deseleccionar grupo"
+                                                  : "Seleccionar grupo"}
+                                              </span>
+                                            </div>
+                                            <div className="space-y-0.5 pl-1">
+                                              {chs.map((ch) => {
+                                                const imp = getImportance(ch);
+                                                return (
+                                                  <button
+                                                    key={ch}
+                                                    onClick={() =>
+                                                      toggleChannel(ch)
+                                                    }
+                                                    className={`w-full flex items-center gap-2 px-2 py-1 rounded text-xs transition-colors ${
+                                                      selectedChannels.includes(
+                                                        ch,
+                                                      )
+                                                        ? "bg-primary/10 text-primary"
+                                                        : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground"
+                                                    }`}
+                                                  >
+                                                    <span className="font-mono">
+                                                      {ch}
                                                     </span>
-                                                  )}
-                                                </button>
-                                              );
-                                            })}
-                                          </div>
-                                        </motion.div>
-                                      )}
-                                    </AnimatePresence>
-                                  </div>
-                                );
-                              },
-                            )
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right: Waveform charts */}
-                      <div className="flex-1 flex flex-col overflow-hidden">
-                        {/* Zoom controls */}
-                        <div className="flex items-center justify-between px-4 py-2 border-b border-border/20 shrink-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-muted-foreground">
-                              Ventana temporal:
-                            </span>
-                            <div className="flex items-center gap-1 bg-secondary/40 rounded-lg p-0.5">
-                              {ZOOM_LABELS.map((label, i) => (
-                                <button
-                                  key={label}
-                                  onClick={() => setZoomIdx(i)}
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-mono transition-colors ${
-                                    zoomIdx === i
-                                      ? "bg-primary text-primary-foreground"
-                                      : "text-muted-foreground hover:text-foreground"
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() =>
-                                setZoomIdx((i) => Math.max(0, i - 1))
-                              }
-                              disabled={zoomIdx === 0}
-                            >
-                              <ZoomOut className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() =>
-                                setZoomIdx((i) =>
-                                  Math.min(ZOOM_LEVELS.length - 1, i + 1),
-                                )
-                              }
-                              disabled={zoomIdx === ZOOM_LEVELS.length - 1}
-                            >
-                              <ZoomIn className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => setZoomIdx(2)}
-                            >
-                              <RotateCcw className="w-3 h-3" />
-                            </Button>
+                                                    {imp !== undefined && (
+                                                      <span className="ml-auto text-[11px] opacity-50">
+                                                        {imp.toFixed(2)}
+                                                      </span>
+                                                    )}
+                                                  </button>
+                                                );
+                                              })}
+                                            </div>
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
+                                  );
+                                },
+                              )
+                            )}
                           </div>
                         </div>
 
-                        {/* Charts area */}
-                        <div className="flex-1 overflow-y-scroll px-4 py-3">
-                          {selectedChannels.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
-                              <Activity className="w-8 h-8 opacity-30" />
-                              <p className="text-sm">
-                                Selecciona canales para visualizar
-                              </p>
-                            </div>
-                          ) : waveformsLoading ? (
-                            <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
-                              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                              <p className="text-xs">Cargando señales...</p>
-                            </div>
-                          ) : vizData?.waveforms ? (
-                            <div className="space-y-1">
-                              {selectedChannels.map((ch) => {
-                                const chData = vizData.waveforms?.channels[ch];
-                                if (!chData) return null;
-                                return (
-                                  <WaveformChart
-                                    key={ch}
-                                    channelName={ch}
-                                    values={chData}
-                                    timestamps={
-                                      vizData.waveforms?.timestamps_ms ?? []
-                                    }
-                                    zoomLevel={zoomLevel}
-                                    color={getChannelColor(ch)}
-                                    importance={getImportance(ch)}
-                                  />
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                              Sin datos de waveform
-                            </div>
-                          )}
-                        </div>
+                        {/* Right: Waveform charts */}
+                        <WaveformsTabContent
+                          selectedChannels={selectedChannels}
+                          waveformsLoading={waveformsLoading}
+                          waveforms={vizData?.waveforms}
+                          getImportance={getImportance}
+                          zoomIdx={zoomIdx}
+                          setZoomIdx={setZoomIdx}
+                          zoomAvailable={zoomAvailable}
+                          samplesVisible={samplesVisible}
+                          windowStart={windowStart}
+                          isPlaying={isPlaying}
+                          setIsPlaying={setIsPlaying}
+                          speedIdx={speedIdx}
+                          setSpeedIdx={setSpeedIdx}
+                          ampIdx={ampIdx}
+                          handleSetAmpIdx={handleSetAmpIdx}
+                          amplitudeScale={amplitudeScale}
+                          cursorFraction={cursorFraction}
+                          setCursorFraction={setCursorFraction}
+                          overlayMode={overlayMode}
+                          setOverlayMode={setOverlayMode}
+                          scrubberFraction={scrubberFraction}
+                          scrubTo={scrubTo}
+                          attachWheelRef={attachWheelRef}
+                        />
                       </div>
                     </div>
                   </motion.div>
