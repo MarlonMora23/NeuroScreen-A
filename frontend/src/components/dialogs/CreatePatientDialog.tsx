@@ -20,9 +20,11 @@ import {
 
 interface Props {
   onCreated: () => void;
+  onCreateSuccess?: (firstName: string, lastName: string) => void;
+  onCreateError?: (error: string) => void;
 }
 
-export default function CreatePatientDialog({ onCreated }: Props) {
+export default function CreatePatientDialog({ onCreated, onCreateSuccess, onCreateError }: Props) {
   const [open, setOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -41,6 +43,9 @@ export default function CreatePatientDialog({ onCreated }: Props) {
     try {
       await patientService.createPatient(form);
 
+      const firstName = form.first_name;
+      const lastName = form.last_name;
+
       setForm({
         identification_number: "",
         first_name: "",
@@ -49,7 +54,11 @@ export default function CreatePatientDialog({ onCreated }: Props) {
       });
 
       onCreated();
+      onCreateSuccess?.(firstName, lastName);
       setOpen(false);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Error al crear paciente";
+      onCreateError?.(errorMsg);
     } finally {
       setIsCreating(false);
     }
@@ -64,7 +73,7 @@ export default function CreatePatientDialog({ onCreated }: Props) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="glass border-border/50">
+      <DialogContent className="bg-background/95 border-border/50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="w-5 h-5 text-primary" />

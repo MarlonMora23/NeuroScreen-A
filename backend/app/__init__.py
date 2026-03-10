@@ -6,8 +6,8 @@ from .extensions import db, migrate, jwt, limiter
 from app.models.user import User
 from app.celery_app import create_celery
 from app.utils.security import register_jwt_callbacks
-from .logging_config import add_console_handlers, get_technical_logger, get_audit_logger
-from .audit import log_tech
+from app.audit.logging_config import add_console_handlers, get_technical_logger, get_audit_logger
+from app.audit.audit import log_tech
 
 
 def create_app(config_class=Config):

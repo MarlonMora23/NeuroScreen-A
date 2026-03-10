@@ -24,8 +24,10 @@
     --muted: 220 15% 12%;
     --muted-foreground: 215 15% 55%;
 
-    --accent: 260 60% 60%;
-    --accent-foreground: 200 20% 95%;
+    --accent: 0 0% 25%;
+    --accent-foreground: 0 0% 100%;
+
+    --landingaccent: 260 60% 60%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 210 40% 98%;
@@ -40,7 +42,7 @@
     --radius: 0.75rem;
 
     --glow-primary: 0 0 30px hsl(185 80% 55% / 0.3);
-    --glow-accent: 0 0 30px hsl(260 60% 60% / 0.3);
+    --glow-accent: 0 0 30px hsl(0, 0%, 25%);
 
     --sidebar-background: 220 20% 6%;
     --sidebar-foreground: 200 20% 90%;
@@ -55,45 +57,52 @@
 
 /* Light theme variables — applied when document has class 'light' */
 .light {
-  --background: 210 16% 98%;
-  --foreground: 220 10% 12%;
+  /* CAMBIO: fondo ligeramente grisáceo en vez de blanco puro */
+  --background: 215 20% 93%;
+  --foreground: 220 15% 12%;
 
+  /* CAMBIO: cards con blanco real para diferenciarse del background grisáceo */
   --card: 0 0% 100%;
-  --card-foreground: 220 10% 12%;
+  --card-foreground: 220 15% 12%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 220 10% 12%;
+  --popover-foreground: 220 15% 12%;
 
-  --primary: 185 80% 45%;
+  --primary: 185 80% 40%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 210 16% 94%;
-  --secondary-foreground: 220 10% 12%;
+  /* CAMBIO: secondary claramente más oscuro que el background para segmentación */
+  --secondary: 215 18% 86%;
+  --secondary-foreground: 220 15% 15%;
 
-  --muted: 210 16% 96%;
-  --muted-foreground: 220 10% 50%;
+  /* CAMBIO: muted más marcado, gris medio para secciones contenedoras */
+  --muted: 215 16% 89%;
+  --muted-foreground: 220 12% 42%;
 
-  --accent: 260 60% 60%;
+  /* CAMBIO: accent en gris medio para modo claro */
+  --accent: 0 0% 80%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  --success: 160 70% 45%;
-  --success-foreground: 220 10% 12%;
+  --success: 160 65% 38%;
+  --success-foreground: 0 0% 100%;
 
-  --border: 220 12% 88%;
-  --input: 220 12% 98%;
-  --ring: 185 80% 45%;
+  /* CAMBIO: borde más visible para mejor separación entre elementos */
+  --border: 220 14% 80%;
+  /* CAMBIO: input con fondo blanco puro para destacar sobre el background grisáceo */
+  --input: 0 0% 100%;
+  --ring: 185 80% 40%;
 
-  --sidebar-background: 210 16% 98%;
-  --sidebar-foreground: 220 10% 12%;
-  --sidebar-primary: 185 80% 45%;
+  --sidebar-background: 215 20% 90%;
+  --sidebar-foreground: 220 15% 12%;
+  --sidebar-primary: 185 80% 40%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 210 16% 94%;
-  --sidebar-accent-foreground: 220 10% 12%;
-  --sidebar-border: 220 12% 88%;
-  --sidebar-ring: 185 80% 45%;
+  --sidebar-accent: 215 18% 84%;
+  --sidebar-accent-foreground: 220 15% 12%;
+  --sidebar-border: 220 14% 78%;
+  --sidebar-ring: 185 80% 40%;
 }
 
 @layer base {
@@ -156,7 +165,7 @@
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-landingaccent;
   }
 
   .eeg-line {

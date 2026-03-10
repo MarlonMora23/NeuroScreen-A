@@ -53,7 +53,7 @@ interface WaveformsTabContentProps {
   windowStart: number;
 
   isPlaying: boolean;
-  setIsPlaying: (v: boolean) => void;
+  togglePlay: () => void;
   speedIdx: number;
   setSpeedIdx: (i: number) => void;
 
@@ -83,7 +83,7 @@ export function WaveformsTabContent({
   samplesVisible,
   windowStart,
   isPlaying,
-  setIsPlaying,
+  togglePlay,
   speedIdx,
   setSpeedIdx,
   ampIdx,
@@ -188,7 +188,7 @@ export function WaveformsTabContent({
         size="sm"
         className="h-8 w-8 p-0 shrink-0"
         title={isPlaying ? "Pause" : "Play"}
-        onClick={() => setIsPlaying(!isPlaying)}
+        onClick={togglePlay}
         disabled={zoomIdx === 0}
       >
         {isPlaying ? (

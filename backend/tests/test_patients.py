@@ -1,6 +1,21 @@
 import pytest
 import uuid
 
+# helper reused from test_eeg_records
+from io import BytesIO
+
+def upload_eeg(client, headers, patient_id, parquet_file):
+    file_data, filename = parquet_file
+    return client.post(
+        "/api/eeg-records/upload",
+        data={
+            "patient_id": str(patient_id),
+            "file": (file_data, filename, "application/octet-stream")
+        },
+        headers=headers,
+        content_type="multipart/form-data"
+    )
+
 
 class TestCreatePatient:
 
@@ -148,3 +163,25 @@ class TestDeletePatient:
     def test_delete_nonexistent_patient(self, client, user_headers):
         response = client.delete(f"/api/patients/{uuid.uuid4()}", headers=user_headers)
         assert response.status_code == 404
+
+    def test_deletion_cascades_to_eeg_predictions_and_visualizations(
+        self, client, admin_headers, user_headers, sample_patient, parquet_file
+    ):
+        # upload EEG and ensure prediction/visualization exist
+        r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
+        eeg_id = r.get_json()["id"]
+
+        pred_resp = client.get(f"/api/eeg-records/{eeg_id}/prediction", headers=user_headers)
+        if pred_resp.status_code == 200:
+            assert "result" in pred_resp.get_json()
+
+        viz_resp = client.get(f"/api/eeg-records/{eeg_id}/visualizations", headers=user_headers)
+        assert viz_resp.status_code in (200, 403)
+
+        # delete the patient
+        response = client.delete(f"/api/patients/{sample_patient.id}", headers=admin_headers)
+        assert response.status_code == 200
+
+        # subsequent requests should yield 404
+        assert client.get(f"/api/eeg-records/{eeg_id}/prediction", headers=admin_headers).status_code == 404
+        assert client.get(f"/api/eeg-records/{eeg_id}/visualizations", headers=admin_headers).status_code == 404

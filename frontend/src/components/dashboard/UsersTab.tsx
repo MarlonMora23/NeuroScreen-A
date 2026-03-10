@@ -10,6 +10,7 @@ import {
   Eye,
   Trash2,
   Pencil,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import CreateUserDialog from "../dialogs/CreateUserDialog";
 import UpdateUserDialog from "../dialogs/UpdateUserDialog";
+import ActionToast, { ActionToastItem } from "@/components/ActionToast";
 
 const UsersTab = () => {
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -68,6 +70,7 @@ const UsersTab = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const { user } = useAuth();
+  const [toasts, setToasts] = useState<ActionToastItem[]>([]);
   const [newUser, setNewUser] = useState<CreateUserRequest>({
     first_name: "",
     last_name: "",
@@ -75,6 +78,15 @@ const UsersTab = () => {
     password: "",
     role: "",
   });
+
+  const addToast = (toast: Omit<ActionToastItem, "id">) => {
+    const id = `toast-${Date.now()}`;
+    setToasts((prev) => [...prev, { ...toast, id }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Cargar usuarios
   useEffect(() => {
@@ -129,6 +141,7 @@ const UsersTab = () => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
+      <ActionToast items={toasts} onDismissItem={removeToast} />
       {error && (
         <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
           <AlertCircle className="h-4 w-4" />
@@ -147,10 +160,26 @@ const UsersTab = () => {
             disabled={loading}
           />
         </div>
-          <CreateUserDialog onCreated={loadUsers} />
+        <CreateUserDialog 
+          onCreated={loadUsers}
+          onCreateSuccess={(firstName, lastName) => 
+            addToast({
+              type: "success",
+              title: "Usuario creado",
+              message: `${firstName} ${lastName} ha sido creado correctamente.`,
+            })
+          }
+          onCreateError={(error) => 
+            addToast({
+              type: "error",
+              title: "Error al crear usuario",
+              message: error,
+            })
+          }
+        />
       </div>
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="glass border-border/50">
+        <DialogContent className="bg-background/95 border-border/50">
           <DialogHeader>
             <DialogTitle>Detalles del usuario</DialogTitle>
           </DialogHeader>
@@ -180,7 +209,7 @@ const UsersTab = () => {
       </Dialog>
 
       <div className="glass rounded-xl overflow-hidden">
-        {loading ? (
+        {loading && user?.role === "admin" ? ( 
           <div className="flex items-center justify-center py-12">
             <Loader className="w-6 h-6 animate-spin text-primary" />
           </div>
@@ -197,6 +226,7 @@ const UsersTab = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
+              
               {filtered.map((u, index) => (
                 <TableRow key={u.id} className="border-border/20">
                   <TableCell className="font-mono text-primary text-sm">
@@ -227,7 +257,13 @@ const UsersTab = () => {
                             setSelectedUser(data);
                             setDetailsOpen(true);
                           } catch (err) {
-                            setError(extractError(err));
+                            const errorMessage = extractError(err);
+                            setError(errorMessage);
+                            addToast({
+                              type: "error",
+                              title: "Error al cargar detalles",
+                              message: errorMessage,
+                            });
                           }
                         }}
                         title="Ver detalles"
@@ -247,14 +283,39 @@ const UsersTab = () => {
                         <Pencil className="w-4 h-4 text-primary" />
                       </Button>
 
-                      {user?.role === "admin" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Invalidar sesión"
+                        onClick={async () => {
+                          try {
+                            await userService.invalidateSession(String(u.id));
+                            addToast({
+                              type: "success",
+                              title: "Sesión invalidada",
+                              message: `La sesión de ${u.first_name} ${u.last_name} ha sido invalidada correctamente.`,
+                            });
+                          } catch (err) {
+                            setError(extractError(err));
+                            addToast({
+                              type: "error",
+                              title: "Error al invalidar sesión",
+                              message: extractError(err),
+                            });
+                          }
+                        }}
+                      >
+                        <LogOut className="w-4 h-4 text-orange-500" />
+                      </Button>
+
+                      
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" title="Eliminar">
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="glass border-border/50">
+                          <AlertDialogContent className="bg-background/95 border-border/50">
                             <AlertDialogHeader>
                               <AlertDialogTitle>
                                 Confirmar eliminación
@@ -266,9 +327,19 @@ const UsersTab = () => {
                                 onClick={async () => {
                                   try {
                                     await userService.deleteUser(String(u.id));
+                                    addToast({
+                                      type: "success",
+                                      title: "Usuario eliminado",
+                                      message: `${u.first_name} ${u.last_name} ha sido eliminado correctamente.`,
+                                    });
                                     await loadUsers();
                                   } catch (err) {
                                     setError(extractError(err));
+                                    addToast({
+                                      type: "error",
+                                      title: "Error al eliminar usuario",
+                                      message: extractError(err),
+                                    });
                                   }
                                 }}
                               >
@@ -277,7 +348,7 @@ const UsersTab = () => {
                             </div>
                           </AlertDialogContent>
                         </AlertDialog>
-                      )}
+                      
                     </div>
                   </TableCell>
                 </TableRow>
@@ -292,16 +363,31 @@ const UsersTab = () => {
                   </TableCell>
                 </TableRow>
               )}
+              
             </TableBody>
           </Table>
         )}
       </div>
       <UpdateUserDialog
-              user={selectedUser}
-              open={editOpen}
-              onClose={() => setEditOpen(false)}
-              onUpdated={loadUsers}
-            />
+        user={selectedUser}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onUpdated={loadUsers}
+        onUpdateSuccess={(firstName, lastName) => 
+          addToast({
+            type: "success",
+            title: "Usuario actualizado",
+            message: `${firstName} ${lastName} ha sido actualizado correctamente.`,
+          })
+        }
+        onUpdateError={(error) => 
+          addToast({
+            type: "error",
+            title: "Error al actualizar usuario",
+            message: error,
+          })
+        }
+      />
     </motion.div>
   );
 };

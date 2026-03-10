@@ -4,7 +4,7 @@ from app.ml.inference import run_inference
 from app.models.eeg_record import EegRecord, EegStatus
 from app.models.prediction_result import PredictionResult
 from app.ml.preprocessing import build_tensor_from_parquet
-from app.audit import log_action
+from app.audit.audit import log_action
 from app.models.user import User
 from app.models.prediction_visualization import PredictionVisualization
 
@@ -108,7 +108,7 @@ def process_eeg_record(self, eeg_record_id: int):
             status="failed"
         )
 
-        raise self.retry(exc=e, countdown=60)  # reintenta tras 60s, máximo 3 veces
+        raise self.retry(exc=e, countdown=30)  # reintenta tras 60s, máximo 3 veces
     
 @celery.task(bind=True, max_retries=2)
 def generate_eeg_visualizations(self, eeg_record_id: int, prediction_id):

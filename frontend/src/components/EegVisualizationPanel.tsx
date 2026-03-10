@@ -193,7 +193,7 @@ export function EegVisualizationPanel({
     samplesVisible,
     windowStart,
     isPlaying,
-    setIsPlaying,
+    togglePlay,
     speedIdx,
     setSpeedIdx,
     ampIdx,
@@ -577,7 +577,7 @@ export function EegVisualizationPanel({
                           samplesVisible={samplesVisible}
                           windowStart={windowStart}
                           isPlaying={isPlaying}
-                          setIsPlaying={setIsPlaying}
+                          togglePlay={togglePlay}
                           speedIdx={speedIdx}
                           setSpeedIdx={setSpeedIdx}
                           ampIdx={ampIdx}

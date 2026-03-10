@@ -14,7 +14,7 @@ def upload_and_get_prediction_id(client, headers, patient_id, parquet_file):
         headers=headers,
         content_type="multipart/form-data"
     )
-    return r.get_json()["eeg_record_id"]
+    return r.get_json()["id"]
 
 
 class TestGetPrediction:
@@ -91,6 +91,17 @@ class TestGetPrediction:
         response = client.get(f"/api/eeg-records/{uuid.uuid4()}/prediction")
         assert response.status_code == 401
 
+    def test_prediction_not_available_after_eeg_deletion(
+        self, client, user_headers, sample_patient, parquet_file
+    ):
+        eeg_id = upload_and_get_prediction_id(
+            client, user_headers, sample_patient.id, parquet_file
+        )
+        # delete the eeg record
+        client.delete(f"/api/eeg-records/{eeg_id}", headers=user_headers)
+        response = client.get(f"/api/eeg-records/{eeg_id}/prediction", headers=user_headers)
+        assert response.status_code == 404
+
 
 class TestListPredictionsByPatient:
 
@@ -132,9 +143,24 @@ class TestListAllPredictions:
         assert response.status_code == 200
         assert isinstance(response.get_json(), list)
 
-    def test_regular_user_cannot_list_all_predictions(self, client, user_headers):
+    def test_regular_user_can_list_own_predictions(self, client, user_headers, sample_patient, parquet_file):
+        eeg_id = upload_and_get_prediction_id(client, user_headers, sample_patient.id, parquet_file)
+        
+        # Ensure the prediction is available
+        pred_response = client.get(f"/api/eeg-records/{eeg_id}/prediction", headers=user_headers)
+        assert pred_response.status_code == 200
+        prediction = pred_response.get_json()
+        prediction_id = prediction['id']
+        
+        # List all predictions for the user
         response = client.get("/api/predictions", headers=user_headers)
-        assert response.status_code == 403
+        assert response.status_code == 200
+        data = response.get_json()
+        assert isinstance(data, list)
+        
+        # Check that the user's prediction is in the list
+        prediction_ids = [str(p['id']) for p in data]
+        assert str(prediction_id) in prediction_ids
 
     def test_list_all_requires_auth(self, client):
         response = client.get("/api/predictions")

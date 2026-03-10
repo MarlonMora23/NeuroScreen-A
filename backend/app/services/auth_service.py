@@ -5,6 +5,7 @@ from flask_jwt_extended import create_access_token
 from app.models.user import User
 from app.models.session import Session
 from app.extensions import db
+from app.exceptions import NotFoundError, ValidationError, PermissionError, AuthenticationError
 
 SESSION_DURATION_MINUTES = 30
 
@@ -16,13 +17,13 @@ class AuthService:
         password = data.get("password", "")
 
         if not email or not password:
-            raise ValueError("Email and password are required")
+            raise AuthenticationError("Email and password are required")
 
         user = User.query.filter_by(email=email, is_deleted=False).first()
 
         # Same message for both cases to avoid user enumeration
         if not user or not check_password_hash(user.password_hash, password):
-            raise ValueError("Invalid credentials")
+            raise AuthenticationError("Invalid credentials")
 
         # Invalidate existing sessions
         AuthService._invalidate_existing_session(user.id)

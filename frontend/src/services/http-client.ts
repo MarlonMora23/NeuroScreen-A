@@ -4,6 +4,7 @@
  */
 
 import { API_BASE_URL, TOKEN_KEY } from "@/config/api";
+import { authService } from "./auth-service";
 
 export class HttpError extends Error {
   status: number;
@@ -25,7 +26,7 @@ class HttpClient {
   }
 
   private getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    return authService.getToken();
   }
 
   private getHeaders(): HeadersInit {

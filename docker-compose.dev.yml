@@ -1,0 +1,19 @@
+services:
+  api:
+    command: flask run --host=0.0.0.0
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=development
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app      # hot reload
+      - eeg_uploads:/app/uploads
+
+  redis:
+    ports:
+      - "6379:6379"         # expuesto para inspeccionar localmente
+
+  db:
+    ports:
+      - "${POSTGRES_PORT}:5432"

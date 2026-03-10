@@ -1,158 +1,259 @@
-import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Activity, Circle } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
-const CHANNELS = ["Fp1", "Fp2", "F3", "F4", "C3", "C4"];
-const COLORS = [
-  "hsl(185, 80%, 55%)",
-  "hsl(260, 60%, 60%)",
-  "hsl(160, 70%, 45%)",
-  "hsl(185, 80%, 40%)",
-  "hsl(260, 60%, 45%)",
-  "hsl(160, 70%, 55%)",
-];
+// ─── Fake data config ───────────────────────────────────────────────────────
+const SAMPLE_RATE = 256;       // Hz
+const BUFFER_SECONDS = 8;      // seconds of pre-generated data
+const BUFFER_SIZE = SAMPLE_RATE * BUFFER_SECONDS;
+const VISIBLE_SECONDS = 2;
+const SAMPLES_VISIBLE = SAMPLE_RATE * VISIBLE_SECONDS;
 
-const generatePoint = (t: number, channelIndex: number) => {
-  const freq1 = 0.8 + channelIndex * 0.3;
-  const freq2 = 2.1 + channelIndex * 0.5;
-  const freq3 = 8 + channelIndex * 1.2;
-  return (
-    Math.sin(t * freq1) * 12 +
-    Math.sin(t * freq2) * 8 +
-    Math.sin(t * freq3) * 3 +
-    (Math.random() - 0.5) * 6
-  );
+const CHANNELS = ["Fp1", "C3", "O2"];
+
+const CHANNEL_COLORS = {
+  Fp1: "rgb(99,179,237)",
+  C3:  "rgb(154,230,180)",
+  O2:  "rgb(241,144,164)",
+
 };
 
-const EEGSignalPreview = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef = useRef<number>(0);
-  const dataRef = useRef<number[][]>(CHANNELS.map(() => Array(200).fill(0)));
-  const tRef = useRef(0);
-  const [isRecording] = useState(true);
+// Generates a realistic-looking fake EEG signal for one channel
+function generateFakeEEG(channelIndex) {
+  const data = new Float32Array(BUFFER_SIZE);
+  const freqDelta  = 2.0  + channelIndex * 0.3;
+  const freqAlpha  = 10.0 + channelIndex * 0.5;
+  const freqBeta   = 20.0 + channelIndex * 0.8;
+  const ampDelta   = 1.4  - channelIndex * 0.1;
+  const ampAlpha   = 0.8;
+  const ampBeta    = 0.3;
+
+  for (let i = 0; i < BUFFER_SIZE; i++) {
+    const t = i / SAMPLE_RATE;
+    const slow   = Math.sin(2 * Math.PI * freqDelta * t) * ampDelta;
+    const alpha  = Math.sin(2 * Math.PI * freqAlpha * t + channelIndex) * ampAlpha;
+    const beta   = Math.sin(2 * Math.PI * freqBeta  * t + channelIndex * 0.7) * ampBeta;
+    const noise  = (Math.random() - 0.5) * 0.4;
+    // Occasional spike artifact for realism
+    const spike  = Math.random() < 0.001 ? (Math.random() - 0.5) * 6 : 0;
+    data[i] = slow + alpha + beta + noise + spike;
+  }
+
+  // Z-score normalise so values are in ~[-3, +3] range
+  let mean = 0;
+  for (let i = 0; i < BUFFER_SIZE; i++) mean += data[i];
+  mean /= BUFFER_SIZE;
+  let std = 0;
+  for (let i = 0; i < BUFFER_SIZE; i++) std += (data[i] - mean) ** 2;
+  std = Math.sqrt(std / BUFFER_SIZE) || 1;
+  for (let i = 0; i < BUFFER_SIZE; i++) data[i] = (data[i] - mean) / std;
+
+  return Array.from(data);
+}
+
+// Pre-generate data once
+const FAKE_DATA = {};
+CHANNELS.forEach((ch, i) => { FAKE_DATA[ch] = generateFakeEEG(i); });
+
+// ─── SVG dimensions ──────────────────────────────────────────────────────────
+const W = 800;
+const H = 180;
+const PAD_V = 10;
+const INNER_H = H - PAD_V * 2;
+const ZSCORE_R = 3;
+const Y_HALF = ZSCORE_R; // fixed amplitude
+
+function toSvgY(v) {
+  const clamped = Math.max(-Y_HALF, Math.min(Y_HALF, v));
+  return PAD_V + (1 - (clamped + Y_HALF) / (2 * Y_HALF)) * INNER_H;
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+export default function EEGSignalPreview() {
+  const [windowStart, setWindowStart] = useState(0);
+  const [cursorFraction, setCursorFraction] = useState(null);
+  const rafRef = useRef(null);
+  const lastTimeRef = useRef(null);
+  const posRef = useRef(0); // float position in samples
+
+  // Auto-scroll: advance ~32 samples/s (≈ 0.125s/s → 8x slow-mo for drama)
+  const SCROLL_SPEED = 40; // samples per second of real time
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const animate = (ts) => {
+      if (lastTimeRef.current == null) lastTimeRef.current = ts;
+      const dt = (ts - lastTimeRef.current) / 1000;
+      lastTimeRef.current = ts;
 
-    const draw = () => {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-      const W = rect.width;
-      const H = rect.height;
+      posRef.current = (posRef.current + SCROLL_SPEED * dt) %
+        (BUFFER_SIZE - SAMPLES_VISIBLE);
 
-      ctx.clearRect(0, 0, W, H);
-
-      // grid lines
-      ctx.strokeStyle = "hsl(220, 15%, 12%)";
-      ctx.lineWidth = 0.5;
-      for (let y = 0; y < H; y += H / 6) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y);
-        ctx.stroke();
-      }
-      for (let x = 0; x < W; x += 40) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, H);
-        ctx.stroke();
-      }
-
-      tRef.current += 0.08;
-
-      CHANNELS.forEach((_, ci) => {
-        const newVal = generatePoint(tRef.current, ci);
-        dataRef.current[ci].push(newVal);
-        if (dataRef.current[ci].length > 200) dataRef.current[ci].shift();
-
-        const channelH = H / CHANNELS.length;
-        const baseY = channelH * ci + channelH / 2;
-
-        ctx.strokeStyle = COLORS[ci];
-        ctx.lineWidth = 1.5;
-        ctx.globalAlpha = 0.85;
-        ctx.beginPath();
-
-        const data = dataRef.current[ci];
-        const step = W / (data.length - 1);
-        data.forEach((val, i) => {
-          const x = i * step;
-          const y = baseY + val;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      });
-
-      animRef.current = requestAnimationFrame(draw);
+      setWindowStart(Math.floor(posRef.current));
+      rafRef.current = requestAnimationFrame(animate);
     };
-
-    draw();
-    return () => cancelAnimationFrame(animRef.current);
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
+  const handleMouseMove = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCursorFraction(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));
+  }, []);
+
+  const handleMouseLeave = useCallback(() => setCursorFraction(null), []);
+
+  // Build polyline points for each channel
+  const polylines = CHANNELS.map((ch) => {
+    const slice = FAKE_DATA[ch].slice(windowStart, windowStart + SAMPLES_VISIBLE);
+    const n = slice.length;
+    const pts = slice
+      .map((v, i) => `${((i / Math.max(n - 1, 1)) * W).toFixed(1)},${toSvgY(v).toFixed(1)}`)
+      .join(" ");
+    return { ch, pts };
+  });
+
+  // Cursor values
+  const cursorValues = {};
+  if (cursorFraction !== null) {
+    CHANNELS.forEach((ch) => {
+      const slice = FAKE_DATA[ch].slice(windowStart, windowStart + SAMPLES_VISIBLE);
+      const idx = Math.round(cursorFraction * (slice.length - 1));
+      cursorValues[ch] = (slice[idx] ?? 0).toFixed(2);
+    });
+  }
+
+  const cursorSvgX = cursorFraction !== null ? cursorFraction * W : null;
+  const startMs = ((windowStart / SAMPLE_RATE) * 1000).toFixed(0);
+  const endMs   = (((windowStart + SAMPLES_VISIBLE) / SAMPLE_RATE) * 1000).toFixed(0);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.6, duration: 0.6 }}
-      className="w-full max-w-2xl mx-auto mt-12"
-    >
-      <div className="glass rounded-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-primary" />
-            <span className="text-xs font-mono font-semibold text-foreground">EEG EN VIVO</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-mono text-muted-foreground">256 Hz · 64ch</span>
-            {isRecording && (
-              <div className="flex items-center gap-1">
-                <Circle className="w-2 h-2 fill-destructive text-destructive animate-pulse-glow" />
-                <span className="text-[10px] font-mono text-destructive">REC</span>
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="rounded-2xl overflow-hidden border border-border font-mono max-w-2xl mx-auto shadow-2xl mt-10 glass">
 
-        {/* Canvas + Labels */}
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            className="w-full h-52 sm:h-60"
-            style={{ display: "block" }}
-          />
-          {/* Channel labels */}
-          <div className="absolute left-2 top-0 h-full flex flex-col justify-around py-2 pointer-events-none">
-            {CHANNELS.map((ch, i) => (
-              <span
-                key={ch}
-                className="text-[9px] font-mono font-semibold leading-none"
-                style={{ color: COLORS[i] }}
-              >
-                {ch}
-              </span>
-            ))}
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+        <div className="flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+          <span className="text-[11px] font-bold text-foreground/85 tracking-widest">
+            GRABACIÓN EEG
+          </span>
         </div>
-
-        {/* Footer metrics */}
-        <div className="flex items-center justify-between px-4 py-2 border-t border-border/30 text-[10px] font-mono text-muted-foreground">
-          <span>Banda: δ θ α β γ</span>
-          <span>Latencia: 12ms</span>
-          <span className="text-success">Estado: Normal</span>
+        <div className="flex items-center gap-4">
+          <span className="text-[10px] text-muted-foreground">256 Hz · 5ch</span>
         </div>
       </div>
-    </motion.div>
-  );
-};
 
-export default EEGSignalPreview;
+      {/* Chart area */}
+      <div className="flex items-stretch">
+
+        {/* Y-axis */}
+        <div className="w-10 flex flex-col justify-between items-end py-2.5 pr-2 border-r border-border shrink-0 select-none">
+          <span className="text-[9px] text-muted-foreground/60">+{Y_HALF}</span>
+          <span className="text-[9px] text-muted-foreground/40">0</span>
+          <span className="text-[9px] text-muted-foreground/60">−{Y_HALF}</span>
+        </div>
+
+        {/* SVG waveform */}
+        <div
+          className="flex-1 cursor-crosshair relative"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <svg
+            width="100%"
+            viewBox={`0 0 ${W} ${H}`}
+            preserveAspectRatio="none"
+            className="block h-[180px]"
+          >
+            {/* Background grid */}
+            {[0.25, 0.5, 0.75].map((f) => (
+              <line
+                key={f}
+                x1={0} y1={H * f} x2={W} y2={H * f}
+                stroke="hsl(var(--muted))" strokeWidth={1}
+              />
+            ))}
+            {Array.from({ length: 8 }, (_, i) => (i + 1) / 9).map((f) => (
+              <line
+                key={f}
+                x1={W * f} y1={0} x2={W * f} y2={H}
+                stroke="hsl(var(--muted)/0.7)" strokeWidth={1}
+              />
+            ))}
+
+            {/* Zero line */}
+            <line
+              x1={0} y1={H / 2} x2={W} y2={H / 2}
+              stroke="hsl(var(--border))" strokeWidth={1} strokeDasharray="4 4"
+            />
+
+            {/* Channel waveforms */}
+            {polylines.map(({ ch, pts }) => (
+              <polyline
+                key={ch}
+                points={pts}
+                fill="none"
+                stroke={CHANNEL_COLORS[ch]}
+                strokeWidth={1.3}
+                strokeOpacity={0.82}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+
+            {/* Cursor line */}
+            {cursorSvgX !== null && (
+              <line
+                x1={cursorSvgX} y1={0} x2={cursorSvgX} y2={H}
+                stroke="hsl(var(--foreground))" strokeOpacity={0.2} strokeWidth={1}
+              />
+            )}
+          </svg>
+        </div>
+
+        {/* Time axis */}
+        <div className="w-[52px] flex flex-col justify-between items-end py-2.5 px-3 select-none shrink-0">
+          <span className="text-[9px] text-muted-foreground/60">{startMs}ms</span>
+          <span className="text-[9px] text-muted-foreground/60">{endMs}ms</span>
+        </div>
+      </div>
+
+      {/* Cursor readout */}
+      <div className="min-h-7 flex items-center px-4 pl-14 border-t border-border gap-4 flex-wrap">
+        {cursorFraction !== null
+          ? CHANNELS.map((ch) => (
+              <span key={ch} className="flex items-center gap-1.5 text-[9px]">
+                <span
+                  className="w-[7px] h-[7px] rounded-full inline-block"
+                  style={{ background: CHANNEL_COLORS[ch] }}
+                />
+                <span className="text-muted-foreground">{ch}</span>
+                <span style={{ color: CHANNEL_COLORS[ch] }}>{cursorValues[ch]}</span>
+              </span>
+            ))
+          : CHANNELS.map((ch) => (
+              <span key={ch} className="flex items-center gap-1.5 text-[9px]">
+                <span
+                  className="w-[7px] h-[7px] rounded-full inline-block opacity-60"
+                  style={{ background: CHANNEL_COLORS[ch] }}
+                />
+                <span className="text-muted-foreground/60">{ch}</span>
+              </span>
+            ))
+        }
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-between px-4 py-2 border-t border-border text-[10px] text-muted-foreground">
+        <span>δ θ α β γ</span>
+        <span className="text-destructive">Estado: Alcohólico</span>
+      </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
+    </div>
+  );
+}

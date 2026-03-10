@@ -19,6 +19,7 @@ import UsersTab from "@/components/dashboard/UsersTab";
 import UploadEEGTab from "@/components/dashboard/UploadEEGTab";
 import ClassificationsTab from "@/components/dashboard/ClassificationsTab";
 import ProcessingNotification from "@/components/ProcessingNotification";
+import FooterDashboard from "@/components/FooterDashboard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const Dashboard = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Processing Notifications */}
       <ProcessingNotification
         items={notifications}
@@ -52,7 +53,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-2">
             <div className="relative">
               <Brain className="w-7 h-7 text-primary" />
-              <Activity className="w-3 h-3 text-accent absolute -top-0.5 -right-1 animate-pulse-glow" />
+              <Activity className="w-3 h-3 text-landingaccent absolute -top-0.5 -right-1 animate-pulse-glow" />
             </div>
             <span className="text-lg font-bold tracking-tight">
               Neuro<span className="text-primary">Screen-A</span>
@@ -84,7 +85,7 @@ const Dashboard = () => {
       </header>
 
       {/* Main content */}
-      <main className="container mx-auto px-4 pt-24 pb-12">
+      <main className="flex-1 container mx-auto px-4 pt-24 pb-12">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList
             className={`w-full max-w-2xl mx-auto grid ${isAdmin ? "grid-cols-4" : "grid-cols-3"} h-auto p-1 bg-secondary/50 rounded-xl mb-8`}
@@ -140,6 +141,9 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Footer */}
+      <FooterDashboard />
     </div>
   );
 };

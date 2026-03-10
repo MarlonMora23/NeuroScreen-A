@@ -78,6 +78,7 @@ Configurar según el ambiente (desarrollo, pruebas, producción).
 - ✅ Indicadores de carga
 - ✅ Manejo de errores
 - ✅ Responsive design
+- ✅ Visualización de interpretabilidad
 
 ## 🔐 Seguridad
 

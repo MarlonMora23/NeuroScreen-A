@@ -45,8 +45,9 @@ import {
 } from "@/services/patient-service";
 import { useAuth } from "@/contexts/auth-context";
 import { extractError } from "@/lib/utils";
-import UpdatePatientDialog from "../dialogs/UpdatePatientDialog";
+import UpdatePatientDialog from "../dialogs/UpdatePatientDialog"; // ensure proper default import
 import CreatePatientDialog from "@/components/dialogs/CreatePatientDialog";
+import ActionToast, { ActionToastItem } from "@/components/ActionToast";
 
 const PatientsTab = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -67,6 +68,16 @@ const PatientsTab = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const { user } = useAuth();
+  const [toasts, setToasts] = useState<ActionToastItem[]>([]);
+
+  const addToast = (toast: Omit<ActionToastItem, "id">) => {
+    const id = `toast-${Date.now()}`;
+    setToasts((prev) => [...prev, { ...toast, id }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Cargar pacientes solo cuando cambian los filtros o se hace búsqueda
   useEffect(() => {
@@ -117,6 +128,7 @@ const PatientsTab = () => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
+      <ActionToast items={toasts} onDismissItem={removeToast} />
       {error && (
         <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
           <AlertCircle className="h-4 w-4" />
@@ -196,12 +208,28 @@ const PatientsTab = () => {
             </div>
 
             <div className="h-8 w-px bg-border/40 hidden sm:block" />
-              <CreatePatientDialog onCreated={loadPatients} />
+            <CreatePatientDialog
+              onCreated={loadPatients}
+              onCreateSuccess={(firstName, lastName) =>
+                addToast({
+                  type: "success",
+                  title: "Paciente creado",
+                  message: `${firstName} ${lastName} ha sido registrado correctamente.`,
+                })
+              }
+              onCreateError={(error) =>
+                addToast({
+                  type: "error",
+                  title: "Error al crear paciente",
+                  message: error,
+                })
+              }
+            />
           </div>
         </div>
       </div>
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="glass border-border/50">
+        <DialogContent className="bg-background/95 border-border/50">
           <DialogHeader>
             <DialogTitle>Detalles del paciente</DialogTitle>
           </DialogHeader>
@@ -284,7 +312,13 @@ const PatientsTab = () => {
                             setSelectedPatient(data);
                             setDetailsOpen(true);
                           } catch (err) {
-                            setError(extractError(err));
+                            const errorMessage = extractError(err);
+                            setError(errorMessage);
+                            addToast({
+                              type: "error",
+                              title: "Error al cargar detalles",
+                              message: errorMessage,
+                            });
                           }
                         }}
                         title="Ver detalles"
@@ -311,7 +345,7 @@ const PatientsTab = () => {
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="glass border-border/50">
+                          <AlertDialogContent className="bg-background/95 border-border/50">
                             <AlertDialogHeader>
                               <AlertDialogTitle>
                                 Confirmar eliminación
@@ -325,9 +359,20 @@ const PatientsTab = () => {
                                     await patientService.deletePatient(
                                       String(p.id),
                                     );
+                                    addToast({
+                                      type: "success",
+                                      title: "Paciente eliminado",
+                                      message: `${p.first_name} ${p.last_name} ha sido eliminado correctamente.`,
+                                    });
                                     await loadPatients();
                                   } catch (err) {
-                                    setError(extractError(err));
+                                    const errorMsg = extractError(err);
+                                    setError(errorMsg);
+                                    addToast({
+                                      type: "error",
+                                      title: "Error al eliminar paciente",
+                                      message: errorMsg,
+                                    });
                                   }
                                 }}
                               >
@@ -360,8 +405,21 @@ const PatientsTab = () => {
         open={editOpen}
         onClose={() => setEditOpen(false)}
         onUpdated={loadPatients}
+        onUpdateSuccess={(firstName, lastName) =>
+          addToast({
+            type: "success",
+            title: "Paciente actualizado",
+            message: `${firstName} ${lastName} ha sido actualizado correctamente.`,
+          })
+        }
+        onUpdateError={(error) =>
+          addToast({
+            type: "error",
+            title: "Error al actualizar paciente",
+            message: error,
+          })
+        }
       />
-      
     </motion.div>
   );
 };

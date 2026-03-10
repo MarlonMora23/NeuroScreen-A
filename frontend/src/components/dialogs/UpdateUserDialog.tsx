@@ -16,6 +16,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onUpdated: () => void;
+  onUpdateSuccess?: (firstName: string, lastName: string) => void;
+  onUpdateError?: (error: string) => void;
 }
 
 export default function UpdateUserDialog({
@@ -23,6 +25,8 @@ export default function UpdateUserDialog({
   open,
   onClose,
   onUpdated,
+  onUpdateSuccess,
+  onUpdateError,
 }: Props) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -71,7 +75,11 @@ export default function UpdateUserDialog({
 
       await userService.updateUser(String(user.id), payload);
       onUpdated();
+      onUpdateSuccess?.(form.first_name, form.last_name);
       onClose();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Error al actualizar usuario";
+      onUpdateError?.(errorMessage);
     } finally {
       setIsUpdating(false);
     }
@@ -81,7 +89,7 @@ export default function UpdateUserDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="glass border-border/50">
+      <DialogContent className="bg-background/95 border-border/50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Pencil className="w-5 h-5 text-primary" />

@@ -6,6 +6,7 @@ import {
   LineChart,
   BrainCircuit,
   Microscope,
+  Eye,
 } from "lucide-react";
 
 const features = [
@@ -40,10 +41,10 @@ const features = [
       "Modela simultáneamente la dimensión temporal y la distribución espacial de 34 canales EEG.",
   },
   {
-    icon: Microscope,
-    title: "No Invasivo",
+    icon: Eye,
+    title: "Interpretabilidad",
     description:
-      "Basado en electroencefalografía de superficie, técnica segura y ampliamente utilizada en investigación clínica.",
+      "Permite interpretar predicciones mediante distintos métodos para una comprensión detallada de los resultados.",
   },
 ];
 

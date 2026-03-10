@@ -8,14 +8,16 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-    JWT_ACCESS_TOKEN_EXPIRES = 1800 # 30 minutes
+    JWT_ACCESS_TOKEN_EXPIRES = 86400  # 24 hours
 
     CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
     CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
     
     # CORS Configuration
-    ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:8080,http://localhost:80").split(",")
-    ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS]  # Remove whitespace
+    ALLOWED_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    ]
     
     # CORS configuration details
     CORS_ALLOW_HEADERS = ["Content-Type", "Authorization"]
@@ -23,14 +25,17 @@ class Config:
     CORS_SUPPORTS_CREDENTIALS = True
     CORS_MAX_AGE = 3600
 
+    EEG_UPLOAD_FOLDER = os.getenv("EEG_UPLOAD_FOLDER", "uploads/eeg")
+    EEG_MAX_FILE_SIZE_BYTES: int = int(os.getenv("EEG_MAX_FILE_SIZE_MB", 200)) * 1024 * 1024  # Convert MB to Bytes
+
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = "J51FofOwnlOVwcBuzZrBWXBgCEnQNk1Xs6kLRh0jTeg"
+    JWT_SECRET_KEY = "test-secret-key-not-for-production"
     CELERY_TASK_ALWAYS_EAGER = True   
     CELERY_TASK_EAGER_PROPAGATES = True
     CELERY_BROKER_URL = "memory://"
     CELERY_RESULT_BACKEND = "cache+memory://"
     WTF_CSRF_ENABLED = False
+    RATELIMIT_ENABLED = False

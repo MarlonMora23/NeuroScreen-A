@@ -1,6 +1,6 @@
 from app import create_app
 from app.extensions import celery
-from app.logging_config import add_console_handlers
+from app.audit.logging_config import add_console_handlers
 
 app = create_app()
 

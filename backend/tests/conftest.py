@@ -1,6 +1,13 @@
 import pytest
 import io
 import os
+
+# testcontainers often uses a "ryuk" reaper container that maps port 8080;
+# on Windows environments with restricted Docker setups this may fail.  Disable
+# it to keep tests simple.  The flag must be set before importing anything from
+# testcontainers.
+os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
+
 from werkzeug.security import generate_password_hash
 from app import create_app
 from app.config import TestingConfig
@@ -8,15 +15,30 @@ from app.extensions import db as _db
 from app.models.user import User, UserRole
 from app.models.patient import Patient
 
+# integration with testcontainers for PostgreSQL
+from testcontainers.postgres import PostgresContainer
+
 
 # ------------------------------------------------------------------ #
 # App y BD                                                             #
 # ------------------------------------------------------------------ #
 
 @pytest.fixture(scope="session")
-def app():
-    """Crea la app con TestingConfig una sola vez por sesión de tests."""
-    app = create_app(TestingConfig)
+def postgres_container():
+    """Start a temporary PostgreSQL instance for the entire test session."""
+    with PostgresContainer("postgres:15-alpine") as postgres:
+        # ensure the container is up and running
+        yield postgres
+
+
+@pytest.fixture(scope="session")
+def app(postgres_container):
+    """Crea la app con TestingConfig apuntando a la base de datos de contenedor."""
+    # Create a config class that inherits from TestingConfig with the PostgreSQL URI
+    class TestConfig(TestingConfig):
+        SQLALCHEMY_DATABASE_URI = postgres_container.get_connection_url()
+    
+    app = create_app(TestConfig)
     with app.app_context():
         yield app
 
@@ -102,7 +124,12 @@ def get_token(client, email, password):
         "email": email,
         "password": password
     })
-    return response.get_json()["access_token"]
+    data = response.get_json()
+    if response.status_code != 200:
+        raise AssertionError(f"Login failed with status {response.status_code}: {data}")
+    if "access_token" not in data:
+        raise AssertionError(f"access_token not found in response: {data}")
+    return data["access_token"]
 
 
 @pytest.fixture

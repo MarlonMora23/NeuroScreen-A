@@ -10,7 +10,7 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Loader, Plus, Shield } from "lucide-react";
+import { Loader, Plus, Shield, Eye, EyeOff } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -24,12 +24,20 @@ import { HttpError } from "@/services/http-client";
 
 interface Props {
   onCreated: () => void;
+  onCreateSuccess?: (firstName: string, lastName: string) => void;
+  onCreateError?: (error: string) => void;
 }
 
-export default function CreateUserDialog({ onCreated }: Props) {
+export default function CreateUserDialog({ onCreated, onCreateSuccess, onCreateError }: Props) {
   const [open, setOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [newUser, setNewUser] = useState<CreateUserRequest>({
     first_name: "",
@@ -41,6 +49,13 @@ export default function CreateUserDialog({ onCreated }: Props) {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (newUser.password !== confirmPassword) {
+      setPasswordError("Las contraseñas no coinciden");
+      return;
+    }
+
+    setPasswordError("");
     setIsCreating(true);
 
     try {
@@ -54,16 +69,20 @@ export default function CreateUserDialog({ onCreated }: Props) {
         role: "",
       });
 
+      setConfirmPassword("");
+      setPasswordError("");
+
       onCreated();
+      onCreateSuccess?.(newUser.first_name, newUser.last_name);
       setOpen(false);
     } catch (err) {
-      if (err instanceof HttpError) {
-        setError(err.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Unexpected error");
-      }
+      const errorMessage = err instanceof HttpError 
+        ? err.message 
+        : err instanceof Error 
+          ? err.message 
+          : "Unexpected error";
+      setError(errorMessage);
+      onCreateError?.(errorMessage);
     } finally {
       setIsCreating(false);
     }
@@ -74,7 +93,11 @@ export default function CreateUserDialog({ onCreated }: Props) {
       open={open}
       onOpenChange={(value) => {
         setOpen(value);
-        if (!value) setError(null);
+        if (!value) {
+          setError(null);
+          setPasswordError("");
+          setConfirmPassword("");
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -84,7 +107,7 @@ export default function CreateUserDialog({ onCreated }: Props) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="glass border-border/50">
+      <DialogContent className="bg-background/95 border-border/50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
@@ -134,16 +157,68 @@ export default function CreateUserDialog({ onCreated }: Props) {
             />
           </div>
 
+          {/* Password */}
           <div className="space-y-2">
-            <Label>Password</Label>
-            <Input
-              required
-              type="password"
-              value={newUser.password}
-              onChange={(e) =>
-                setNewUser({ ...newUser, password: e.target.value })
-              }
-            />
+            <Label>Contraseña</Label>
+            <div className="relative">
+              <Input
+                required
+                type={showPassword ? "text" : "password"}
+                value={newUser.password}
+                onChange={(e) => {
+                  setNewUser({ ...newUser, password: e.target.value });
+                  setPasswordError("");
+                }}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div className="space-y-2">
+            <Label>Confirmar contraseña</Label>
+            <div className="relative">
+              <Input
+                required
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setPasswordError("");
+                }}
+                className={`pr-10 ${
+                  passwordError
+                    ? "border-destructive focus:border-destructive"
+                    : ""
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showConfirm ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+
+            {passwordError && (
+              <p className="text-xs text-destructive">{passwordError}</p>
+            )}
           </div>
 
           <div className="space-y-2">

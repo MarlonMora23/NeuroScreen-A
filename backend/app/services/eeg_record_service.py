@@ -1,15 +1,13 @@
 import os
 import uuid
 from uuid import UUID
-
-from flask import jsonify
 from app.extensions import db
-from app.models.eeg_record import EegRecord, EegStatus, FILE_TYPE
+from app.models.eeg_record import FILE_TYPE, EegRecord, EegStatus
 from app.models.patient import Patient
 from app.models.user import User, UserRole
+from app.exceptions import NotFoundError, ValidationError, PermissionError
+from app.config import Config
 
-UPLOAD_FOLDER = "uploads/eeg"
-MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024  # 200 MB
 ALLOWED_EXTENSIONS = {FILE_TYPE.PARQUET: ".parquet"}
 
 class EegRecordService:
@@ -19,10 +17,10 @@ class EegRecordService:
         try:
             patient_uuid = UUID(str(patient_id))
         except Exception:
-            raise ValueError("Patient not found")
+            raise ValidationError("patient_id must be a valid UUID")
         patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
-            raise ValueError("Patient not found")
+            raise ValidationError("Patient does not exist")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -31,14 +29,15 @@ class EegRecordService:
             raise PermissionError("Not allowed to upload EEG for this patient")
 
         # Validate name and extension
-        original_filename = file.filename
-        if not original_filename:
-            raise ValueError("No file provided")
-
+        try:
+            original_filename = file.filename
+        except Exception:
+            raise ValidationError("No file provided")
+       
         ext = os.path.splitext(original_filename)[1].lower()
         allowed_exts = list(ALLOWED_EXTENSIONS.values())
         if ext not in allowed_exts:
-            raise ValueError(f"File type not allowed. Allowed: {', '.join(allowed_exts)}")
+            raise ValidationError(f"File type not allowed. Allowed: {', '.join(allowed_exts)}")
 
         # Determine EegFileType from the extension
         file_type = next(
@@ -52,14 +51,14 @@ class EegRecordService:
         file.seek(0)     # Go back to start
 
         if file_size == 0:
-            raise ValueError("File is empty")
-        if file_size > MAX_FILE_SIZE_BYTES:
-            raise ValueError(f"File exceeds maximum allowed size of {MAX_FILE_SIZE_BYTES // (1024*1024)} MB")
+            raise ValidationError("File is empty")
+        if file_size > Config.EEG_MAX_FILE_SIZE_BYTES:
+            raise ValidationError(f"File exceeds maximum allowed size of {Config.EEG_MAX_FILE_SIZE_BYTES // (1024*1024)} MB")
 
         # Generate a unique name to avoid collisions and not expose the original name
         unique_filename = f"{uuid.uuid4().hex}{ext}"
-        save_path = os.path.join(UPLOAD_FOLDER, unique_filename)
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        save_path = os.path.join(Config.EEG_UPLOAD_FOLDER, unique_filename)
+        os.makedirs(Config.EEG_UPLOAD_FOLDER, exist_ok=True)
         file.save(save_path)
 
         record = EegRecord(
@@ -88,7 +87,7 @@ class EegRecordService:
             try:
                 patient_id = UUID(str(filters["patient_id"]))
             except (ValueError, TypeError):
-                raise ValueError("patient_id must be a valid UUID")
+                raise ValidationError("patient_id must be a valid UUID")
             query = query.filter_by(patient_id=patient_id)
 
         if filters.get("status"):
@@ -96,7 +95,7 @@ class EegRecordService:
                 status = EegStatus(filters["status"])
             except ValueError:
                 valid = [s.value for s in EegStatus]
-                raise ValueError(f"Invalid status. Valid values: {', '.join(valid)}")
+                raise ValidationError(f"Invalid status. Valid values: {', '.join(valid)}")
             query = query.filter_by(status=status)
 
         records = query.order_by(EegRecord.created_at.desc()).all()
@@ -107,11 +106,11 @@ class EegRecordService:
         try:
             eeg_uuid = UUID(str(eeg_id))
         except Exception:
-            raise ValueError("EEG record not found")
+            raise NotFoundError("EEG record not found")
         eeg = db.session.get(EegRecord, eeg_uuid)
 
         if not eeg or eeg.is_deleted:
-            raise ValueError("EEG record not found")
+            raise NotFoundError("EEG record not found")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -126,10 +125,10 @@ class EegRecordService:
         try:
             patient_uuid = UUID(str(patient_id))
         except Exception:
-            raise ValueError("Patient not found")
+            raise NotFoundError("Patient not found")
         patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
-            raise ValueError("Patient not found")
+            raise NotFoundError("Patient not found")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -153,12 +152,12 @@ class EegRecordService:
         try:
             eeg_uuid = UUID(str(eeg_id))
         except Exception:
-            raise ValueError("EEG record not found")
+            raise NotFoundError("EEG record not found")
         
         eeg = db.session.get(EegRecord, eeg_uuid)
 
         if not eeg or eeg.is_deleted:
-            raise ValueError("EEG record not found")
+            raise NotFoundError("EEG record not found")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -174,23 +173,21 @@ class EegRecordService:
         }
     
     @staticmethod
-    def get_eeg_visualizations(eeg_record_id: str, types: str, channels: str, current_user: User) -> dict:
-        from app.models.prediction_visualization import PredictionVisualization
-
+    def get_eeg_visualizations(eeg_record_id: str, types: str, channels: str | None, current_user: User) -> dict:
         try:
             eeg_uuid = UUID(str(eeg_record_id))
         except Exception:
-            raise ValueError("EEG record not found")
+            raise NotFoundError("EEG record not found")
         
         eeg_record = db.session.get(EegRecord, eeg_uuid)
 
-        if not eeg_record:
-            raise ValueError("EEG record not found")
+        if not eeg_record or eeg_record.is_deleted:
+            raise NotFoundError("EEG record not found")
 
         # Verificar permisos (reutiliza tu lógica existente)
         patient = db.session.get(Patient, eeg_record.patient_id)
         if not patient or patient.is_deleted:
-            raise ValueError("Patient not found")
+            raise NotFoundError("Patient not found")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -199,8 +196,8 @@ class EegRecordService:
             raise PermissionError("Not allowed to access this patient's records")
 
         prediction = eeg_record.prediction_result  
-        if not prediction:
-            raise ValueError("No prediction found for this record")
+        if not prediction or prediction.is_deleted:
+            raise NotFoundError("No prediction found for this record")
 
         viz = prediction.visualization
         if not viz:
@@ -245,11 +242,11 @@ class EegRecordService:
         try:
             eeg_uuid = UUID(str(eeg_id))
         except Exception:
-            raise ValueError("EEG record not found")
+            raise NotFoundError("EEG record not found")
         eeg = db.session.get(EegRecord, eeg_uuid)
 
         if not eeg or eeg.is_deleted:
-            raise ValueError("EEG record not found")
+            raise NotFoundError("EEG record not found")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -258,7 +255,7 @@ class EegRecordService:
             raise PermissionError("Not allowed to delete this record")
 
         if eeg.status == EegStatus.PROCESSING:
-            raise ValueError("Cannot delete a record that is currently being processed")
+            raise ValidationError("Cannot delete a record that is currently being processed")
 
         eeg.soft_delete()
         db.session.commit()

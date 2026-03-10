@@ -74,6 +74,7 @@ Ver configuración completa y opciones de desarrollo en [readme.md](/readme.md)
 | **GET** | `api/eeg-records/<eeg_id>` | Obtener detalles de un registro EEG específico |
 | **GET** | `api/patients/<patient_id>/eeg-records` | Obtener todos los registros EEG de un paciente específico |
 | **GET** | `api/eeg-records/<eeg_id>/status` | Obtener el estado actual de procesamiento de un registro EEG |
+| **GET** | `api/eeg-records/<eeg_record_id>/visualizations` | Obtener gráficas de interpretabilidad (waveforms, topomap, feature importance) para un EEG procesado |
 | **DELETE** | `api/eeg-records/<eeg_id>` | Eliminar un registro EEG |
 
 ### Resultados de Predicciones

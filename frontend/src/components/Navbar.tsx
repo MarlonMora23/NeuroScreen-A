@@ -11,7 +11,7 @@ const Navbar = () => {
         <div className="flex items-center gap-2">
           <div className="relative">
             <Brain className="w-7 h-7 text-primary" />
-            <Activity className="w-3 h-3 text-accent absolute -top-0.5 -right-1 animate-pulse-glow" />
+            <Activity className="w-3 h-3 text-landingaccent absolute -top-0.5 -right-1 animate-pulse-glow" />
           </div>
           <span className="text-lg font-bold tracking-tight">
             Neuro<span className="text-primary">Screen-A</span>

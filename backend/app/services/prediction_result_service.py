@@ -5,6 +5,7 @@ from app.models.eeg_record import EegRecord, EegStatus
 from app.models.patient import Patient
 from app.models.user import User, UserRole
 from sqlalchemy.orm import joinedload
+from app.exceptions import NotFoundError, ValidationError, PermissionError
 
 class PredictionResultService:
 
@@ -13,10 +14,10 @@ class PredictionResultService:
         try:
             eeg_uuid = UUID(str(eeg_record_id))
         except Exception:
-            raise ValueError("EEG record not found")
+            raise NotFoundError("EEG record not found")
         eeg = db.session.get(EegRecord, eeg_uuid)
         if not eeg or eeg.is_deleted:
-            raise ValueError("EEG record not found")
+            raise NotFoundError("EEG record not found")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -26,10 +27,10 @@ class PredictionResultService:
 
         # Verify that the EEG has been processed successfully before trying to get the prediction
         if eeg.status == EegStatus.PENDING or eeg.status == EegStatus.PROCESSING:
-            raise ValueError("EEG record has not been processed yet")
+            raise ValidationError("EEG record has not been processed yet")
 
         if eeg.status == EegStatus.FAILED:
-            raise ValueError("EEG processing failed — no prediction available")
+            raise ValidationError("EEG processing failed — no prediction available")
 
         prediction = (
             PredictionResultService._base_prediction_query()
@@ -38,7 +39,7 @@ class PredictionResultService:
         )
 
         if not prediction:
-            raise ValueError("Prediction result not found")
+            raise NotFoundError("Prediction result not found")
 
         return PredictionResultService._to_dict(prediction)
 
@@ -60,12 +61,12 @@ class PredictionResultService:
         try:
             patient_uuid = UUID(str(patient_id))
         except Exception:
-            raise ValueError("Patient not found")
+            raise NotFoundError("Patient not found")
 
         patient = db.session.get(Patient, patient_uuid)
 
         if not patient or patient.is_deleted:
-            raise ValueError("Patient not found")
+            raise NotFoundError("Patient not found")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -91,7 +92,7 @@ class PredictionResultService:
         try:
             pred_uuid = UUID(str(prediction_id))
         except Exception:
-            raise ValueError("Prediction not found")
+            raise NotFoundError("Prediction not found")
 
         query = PredictionResultService._base_prediction_query()
         query = PredictionResultService._apply_access_filter(query, current_user)
@@ -99,12 +100,12 @@ class PredictionResultService:
         prediction = query.filter(PredictionResult.id == pred_uuid).first()
 
         if not prediction or prediction.is_deleted:
-            raise ValueError("Prediction not found")
+            raise NotFoundError("Prediction not found")
 
         eeg = prediction.eeg_record
 
         if not eeg or eeg.is_deleted:
-            raise ValueError("Associated EEG record not found")
+            raise NotFoundError("Associated EEG record not found")
 
         return PredictionResultService._to_dict(prediction)
 
@@ -113,7 +114,7 @@ class PredictionResultService:
         try:
             pred_uuid = UUID(str(prediction_id))
         except Exception:
-            raise ValueError("Prediction not found")
+            raise NotFoundError("Prediction not found")
 
         prediction = (
             PredictionResultService._base_prediction_query()
@@ -122,7 +123,7 @@ class PredictionResultService:
         )
 
         if not prediction or prediction.is_deleted:
-            raise ValueError("Prediction not found")
+            raise NotFoundError("Prediction not found")
 
         # Only ADMIN can delete predictions
         if current_user.role != UserRole.ADMIN:
@@ -160,9 +161,11 @@ class PredictionResultService:
         return (
             db.session.query(PredictionResult)
             .join(PredictionResult.eeg_record)
+            .join(EegRecord.patient)
             .filter(
                 PredictionResult.is_deleted == False,
-                EegRecord.is_deleted == False
+                EegRecord.is_deleted == False,
+                Patient.is_deleted == False
             )
             .options(
                 joinedload(PredictionResult.eeg_record)

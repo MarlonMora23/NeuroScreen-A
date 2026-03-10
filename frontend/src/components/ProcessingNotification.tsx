@@ -25,6 +25,7 @@ interface ProcessingNotificationProps {
    * classifications table after a new prediction comes back).
    */
   onProcessed?: () => void;
+  autoCloseDuration?: number; // en ms, default 15000
 }
 
 const ProcessingNotification: React.FC<ProcessingNotificationProps> = ({
@@ -32,10 +33,35 @@ const ProcessingNotification: React.FC<ProcessingNotificationProps> = ({
   onDismissItem,
   onViewResult,
   onProcessed,
+  autoCloseDuration = 15000,
 }) => {
   if (items.length === 0) {
     return null;
   }
+
+  const toastRefs = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  React.useEffect(() => {
+    items.forEach((item) => {
+      // Auto-dismiss processed and failed items after duration
+      if (item.status === "processed" || item.status === "failed") {
+        const existingTimeout = toastRefs.current.get(item.id);
+        if (existingTimeout) {
+          clearTimeout(existingTimeout);
+        }
+
+        const timeout = setTimeout(() => {
+          onDismissItem?.(item.id);
+        }, autoCloseDuration);
+
+        toastRefs.current.set(item.id, timeout);
+      }
+    });
+
+    return () => {
+      toastRefs.current.forEach((timeout) => clearTimeout(timeout));
+    };
+  }, [items, onDismissItem, autoCloseDuration]);
 
   const getStatusIcon = (
     status: ProcessingNotificationItem["status"],

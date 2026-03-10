@@ -17,14 +17,19 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onUpdated: () => void;
+  onUpdateSuccess?: (firstName: string, lastName: string) => void;
+  onUpdateError?: (error: string) => void;
 }
 
-export default function UpdatePatientDialog({
+// exported as React.FC to ensure props are carried through to import sites
+const UpdatePatientDialog: React.FC<Props> = ({
   patient,
   open,
   onClose,
   onUpdated,
-}: Props) {
+  onUpdateSuccess,
+  onUpdateError,
+}: Props) => {
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState<UpdatePatientRequest>({
@@ -53,7 +58,11 @@ export default function UpdatePatientDialog({
     try {
       await patientService.updatePatient(patient.id, form);
       await onUpdated();
+      onUpdateSuccess?.(form.first_name, form.last_name);
       onClose();
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Error al actualizar paciente";
+      onUpdateError?.(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -61,7 +70,7 @@ export default function UpdatePatientDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="glass border-border/50">
+      <DialogContent className="bg-background/95 border-border/50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="w-5 h-5 text-primary" />
@@ -122,4 +131,6 @@ export default function UpdatePatientDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default UpdatePatientDialog;

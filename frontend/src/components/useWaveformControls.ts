@@ -127,6 +127,18 @@ export function useWaveformControls(totalSamples: number) {
 
   const scrubberFraction = maxStart > 0 ? windowStart / maxStart : 0;
 
+  // ── Toggle play ───────────────────────────────────────────────────────────
+  const togglePlay = useCallback(() => {
+    if (isPlaying) {
+      setIsPlaying(false);
+    } else {
+      if (windowStart >= maxStart) {
+        setWindowStart(0);
+      }
+      setIsPlaying(true);
+    }
+  }, [isPlaying, windowStart, maxStart]);
+
   return {
     // zoom
     zoomIdx, setZoomIdx, zoomAvailable, windowS, samplesVisible,
@@ -135,7 +147,7 @@ export function useWaveformControls(totalSamples: number) {
     // amplitude
     ampIdx, handleSetAmpIdx, amplitudeScale,
     // playback
-    isPlaying, setIsPlaying, speedIdx, setSpeedIdx, playSpeed,
+    isPlaying, togglePlay, speedIdx, setSpeedIdx, playSpeed,
     // cursor
     cursorFraction, setCursorFraction,
     // overlay

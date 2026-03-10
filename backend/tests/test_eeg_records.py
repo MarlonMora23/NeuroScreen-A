@@ -23,7 +23,7 @@ class TestUploadEeg:
         response = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
         data = response.get_json()
         assert response.status_code == 202
-        assert "eeg_record_id" in data
+        assert "id" in data
         assert data["status"] == "pending"
 
     def test_upload_creates_prediction_after_processing(self, client, user_headers, sample_patient, parquet_file):
@@ -32,7 +32,7 @@ class TestUploadEeg:
         así que tras el upload el resultado ya debería estar disponible.
         """
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         status_r = client.get(
             f"/api/eeg-records/{eeg_id}/status",
@@ -150,7 +150,7 @@ class TestGetEegRecord:
 
     def test_user_can_get_own_record(self, client, user_headers, sample_patient, parquet_file):
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         response = client.get(f"/api/eeg-records/{eeg_id}", headers=user_headers)
         assert response.status_code == 200
@@ -158,7 +158,7 @@ class TestGetEegRecord:
 
     def test_file_path_not_exposed(self, client, user_headers, sample_patient, parquet_file):
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         response = client.get(f"/api/eeg-records/{eeg_id}", headers=user_headers)
         assert "file_path" not in response.get_json()
@@ -167,7 +167,7 @@ class TestGetEegRecord:
         self, client, user_headers, another_user_headers, sample_patient, parquet_file
     ):
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         response = client.get(f"/api/eeg-records/{eeg_id}", headers=another_user_headers)
         assert response.status_code == 403
@@ -183,7 +183,7 @@ class TestEegStatus:
         self, client, user_headers, sample_patient, parquet_file
     ):
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         response = client.get(f"/api/eeg-records/{eeg_id}/status", headers=user_headers)
         data = response.get_json()
@@ -198,24 +198,92 @@ class TestEegStatus:
         self, client, user_headers, another_user_headers, sample_patient, parquet_file
     ):
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         response = client.get(f"/api/eeg-records/{eeg_id}/status", headers=another_user_headers)
         assert response.status_code == 403
+
+
+class TestEegVisualizations:
+    """Verifies the new visualization endpoint and related permissions/cascades."""
+
+    def test_visualizations_available_after_processing(
+        self, client, user_headers, sample_patient, parquet_file
+    ):
+        r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
+        eeg_id = r.get_json()["id"]
+
+        response = client.get(
+            f"/api/eeg-records/{eeg_id}/visualizations",
+            headers=user_headers
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "status" in data
+        assert data["status"] in ("pending", "processing", "completed", "failed")
+        if data["status"] == "completed":
+            assert any(key in data for key in ("waveforms", "topomap", "channel_importance"))
+
+    def test_visualizations_filters_types_and_channels(
+        self, client, user_headers, sample_patient, parquet_file
+    ):
+        r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
+        eeg_id = r.get_json()["id"]
+
+        response = client.get(
+            f"/api/eeg-records/{eeg_id}/visualizations?types=waveforms&channels=F1",
+            headers=user_headers
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+        if data.get("status") == "completed":
+            assert "waveforms" in data
+            wf = data["waveforms"]
+            assert "channels" in wf
+            assert set(wf["channels"].keys()) <= {"F1"}
+
+    def test_visualization_access_control(
+        self, client, user_headers, another_user_headers, sample_patient, parquet_file
+    ):
+        r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
+        eeg_id = r.get_json()["id"]
+
+        response = client.get(
+            f"/api/eeg-records/{eeg_id}/visualizations",
+            headers=another_user_headers
+        )
+        assert response.status_code == 403
+
+    def test_visualizations_require_auth(self, client, sample_patient, parquet_file):
+        # no headers should result in unauthorized
+        response = client.get(f"/api/eeg-records/{uuid.uuid4()}/visualizations")
+        assert response.status_code == 401
+
+    def test_visualizations_for_deleted_patient_returns_404(
+        self, client, admin_headers, user_headers, sample_patient, parquet_file
+    ):
+        r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
+        eeg_id = r.get_json()["id"]
+        client.delete(f"/api/patients/{sample_patient.id}", headers=admin_headers)
+        response = client.get(
+            f"/api/eeg-records/{eeg_id}/visualizations",
+            headers=admin_headers
+        )
+        assert response.status_code == 404
 
 
 class TestDeleteEegRecord:
 
     def test_user_can_delete_own_record(self, client, user_headers, sample_patient, parquet_file):
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         response = client.delete(f"/api/eeg-records/{eeg_id}", headers=user_headers)
         assert response.status_code == 200
 
     def test_deleted_record_not_found(self, client, user_headers, sample_patient, parquet_file):
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         client.delete(f"/api/eeg-records/{eeg_id}", headers=user_headers)
         response = client.get(f"/api/eeg-records/{eeg_id}", headers=user_headers)
@@ -225,7 +293,7 @@ class TestDeleteEegRecord:
         self, client, user_headers, another_user_headers, sample_patient, parquet_file
     ):
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         response = client.delete(f"/api/eeg-records/{eeg_id}", headers=another_user_headers)
         assert response.status_code == 403
@@ -234,10 +302,30 @@ class TestDeleteEegRecord:
         self, client, admin_headers, user_headers, sample_patient, parquet_file
     ):
         r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
-        eeg_id = r.get_json()["eeg_record_id"]
+        eeg_id = r.get_json()["id"]
 
         response = client.delete(f"/api/eeg-records/{eeg_id}", headers=admin_headers)
         assert response.status_code == 200
+
+    def test_delete_cascades_to_prediction_and_visualization(self, client, user_headers, sample_patient, parquet_file):
+        # after deleting the EEG record both prediction and visualization endpoints
+        # should return 404
+        r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
+        eeg_id = r.get_json()["id"]
+
+        # ensure prediction exists first
+        pred_resp = client.get(f"/api/eeg-records/{eeg_id}/prediction", headers=user_headers)
+        if pred_resp.status_code == 200:
+            assert "result" in pred_resp.get_json()
+
+        viz_resp = client.get(f"/api/eeg-records/{eeg_id}/visualizations", headers=user_headers)
+        # may be pending or completed but should not be error
+        assert viz_resp.status_code == 200 or viz_resp.status_code == 403
+        # now delete record
+        client.delete(f"/api/eeg-records/{eeg_id}", headers=user_headers)
+
+        assert client.get(f"/api/eeg-records/{eeg_id}/prediction", headers=user_headers).status_code == 404
+        assert client.get(f"/api/eeg-records/{eeg_id}/visualizations", headers=user_headers).status_code == 404
 
 
 class TestListByPatient:

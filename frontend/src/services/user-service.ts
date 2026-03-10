@@ -23,7 +23,9 @@ export interface CreateUserRequest {
   role: string;
 }
 
-export interface UpdateUserRequest extends Partial<Omit<CreateUserRequest, "password">> {
+export interface UpdateUserRequest extends Partial<
+  Omit<CreateUserRequest, "password">
+> {
   password?: string;
 }
 
@@ -42,6 +44,10 @@ class UserService {
 
   async updateUser(id: string, data: UpdateUserRequest): Promise<AppUser> {
     return httpClient.put<AppUser>(API_ENDPOINTS.USER_BY_ID(id), data);
+  }
+
+  async invalidateSession(id: string): Promise<void> {
+    await httpClient.post(API_ENDPOINTS.INVALIDATE_USER_SESSION(id));
   }
 
   async deleteUser(id: string): Promise<void> {
