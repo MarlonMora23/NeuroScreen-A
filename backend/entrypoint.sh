@@ -32,10 +32,11 @@ from werkzeug.security import generate_password_hash
 app = create_app()
 
 with app.app_context():
-    existing = User.query.filter_by(email='admin@neuroscreen.com').first()
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@neuroscreen.com')
+    existing = User.query.filter_by(email=admin_email).first()
     if not existing:
         admin = User(
-            email='admin@neuroscreen.com',
+            email=admin_email,
             password_hash=generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'Admin123')),
             first_name='Admin',
             last_name='Principal',

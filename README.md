@@ -184,7 +184,7 @@ Si quieres desarrollar el frontend con **hot-reload** y cambios en tiempo real, 
    ```bash
    npm run dev
    ```
-   El frontend estará disponible en `http://localhost:5173`
+   El frontend estará disponible en `http://localhost:8080`
 
 **Ventajas**: Hot-reload, cambios instantáneos en desarrollo  
 **Desventajas**: Requiere Node.js instalado localmente
