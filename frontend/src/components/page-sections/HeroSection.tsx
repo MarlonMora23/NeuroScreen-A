@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowDown, Brain, Waves } from "lucide-react";
-import EEGWave from "./EEGWave";
-import EEGSignalPreview from "./EEGSignalPreview";
+import EEGWave from "../eeg/EEGWave";
+import EEGSignalPreview from "../eeg/EEGSignalPreview";
 
 const HeroSection = () => {
   const navigate = useNavigate();

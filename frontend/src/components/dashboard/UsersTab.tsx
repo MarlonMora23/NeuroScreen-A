@@ -57,7 +57,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import CreateUserDialog from "../dialogs/CreateUserDialog";
 import UpdateUserDialog from "../dialogs/UpdateUserDialog";
-import ActionToast, { ActionToastItem } from "@/components/ActionToast";
+import ActionToast, { ActionToastItem } from "@/components/notifications/ActionToast";
 
 const UsersTab = () => {
   const [users, setUsers] = useState<AppUser[]>([]);

@@ -47,7 +47,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { extractError } from "@/lib/utils";
 import UpdatePatientDialog from "../dialogs/UpdatePatientDialog"; // ensure proper default import
 import CreatePatientDialog from "@/components/dialogs/CreatePatientDialog";
-import ActionToast, { ActionToastItem } from "@/components/ActionToast";
+import ActionToast, { ActionToastItem } from "@/components/notifications/ActionToast";
 
 const PatientsTab = () => {
   const [patients, setPatients] = useState<Patient[]>([]);

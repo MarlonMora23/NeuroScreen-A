@@ -125,7 +125,7 @@ export default function EEGSignalPreview() {
   const endMs   = (((windowStart + SAMPLES_VISIBLE) / SAMPLE_RATE) * 1000).toFixed(0);
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-border font-mono max-w-2xl mx-auto shadow-2xl mt-10 glass">
+    <div className="rounded-2xl overflow-hidden border border-border font-mono max-w-2xl mx-auto shadow-2xl mt-10 bg-card">
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">

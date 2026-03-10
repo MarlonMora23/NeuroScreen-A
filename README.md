@@ -119,12 +119,34 @@ cp .env.example .env
 ### 2️⃣ Levantar Todo con Docker (Opción Recomendada ⭐)
 **Esta es la forma recomendada y más sencilla:**
 
-En la raíz del proyecto, ejecuta:
+En la raíz del proyecto, ejecuta según el ambiente:
+
+#### 🔧 Desarrollo (con hot-reload)
 ```bash
-docker-compose up --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
-Esto levanta automáticamente:
+#### 🚀 Producción
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+#### 🛑 Detener Servicios
+```bash
+docker compose down
+```
+
+#### 📋 Ver Logs
+```bash
+docker compose logs -f api worker
+```
+
+#### 🏗️ Build en Producción
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build
+```
+
+**Estos comandos levanta automáticamente:**
 - ✅ Backend (Flask) en `http://localhost:5000`
 - ✅ Frontend (React) en `http://localhost` (sirve a través de Nginx)
 - ✅ PostgreSQL (base de datos)
@@ -134,16 +156,6 @@ Esto levanta automáticamente:
 ### 3️⃣ Accede a la Aplicación
 - **Frontend**: http://localhost
 - **Backend API**: http://localhost:5000
-
-### 4️⃣ Crear Usuario Admin (Opcional)
-```bash
-# Dentro del contenedor del backend
-docker exec neuroscreen_api python create_admin.py
-```
-
-### 5️⃣ Inicia Sesión
-- Email: usuario@ejemplo.com (o el configurado en el paso anterior)
-- Contraseña: la configurada
 
 ---
 

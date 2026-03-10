@@ -18,8 +18,8 @@ import PatientsTab from "@/components/dashboard/PatientsTab";
 import UsersTab from "@/components/dashboard/UsersTab";
 import UploadEEGTab from "@/components/dashboard/UploadEEGTab";
 import ClassificationsTab from "@/components/dashboard/ClassificationsTab";
-import ProcessingNotification from "@/components/ProcessingNotification";
-import FooterDashboard from "@/components/FooterDashboard";
+import ProcessingNotification from "@/components/notifications/ProcessingNotification";
+import FooterDashboard from "@/components/layout/FooterDashboard";
 
 const Dashboard = () => {
   const navigate = useNavigate();

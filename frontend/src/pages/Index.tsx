@@ -1,9 +1,9 @@
-import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
-import HowItWorks from "@/components/HowItWorks";
-import Features from "@/components/Features";
-import Results from "@/components/Results";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/layout/Navbar";
+import HeroSection from "@/components/page-sections/HeroSection";
+import HowItWorks from "@/components/page-sections/HowItWorks";
+import Features from "@/components/page-sections/Features";
+import Results from "@/components/page-sections/Results";
+import Footer from "@/components/layout/Footer";
 
 const Index = () => {
   return (

@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import EEGWave from "@/components/EEGWave";
+import EEGWave from "@/components/eeg/EEGWave";
 import { useAuth } from "@/contexts/auth-context";
-import LoginNavbar from "@/components/LoginNavbar";
+import LoginNavbar from "@/components/layout/LoginNavbar";
 
 const Login = () => {
   const navigate = useNavigate();

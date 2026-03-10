@@ -47,8 +47,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Microscope } from "lucide-react";
-import { EegVisualizationPanel } from "@/components/EegVisualizationPanel";
-import ActionToast, { ActionToastItem } from "@/components/ActionToast";
+import { EegVisualizationPanel } from "@/components/eeg/EegVisualizationPanel";
+import ActionToast, { ActionToastItem } from "@/components/notifications/ActionToast";
 
 interface ClassificationsTabProps {
   onNavigateToUpload?: () => void;

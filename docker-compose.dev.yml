@@ -1,6 +1,6 @@
 services:
   api:
-    command: flask run --host=0.0.0.0
+    command: flask run --host=0.0.0.0 --no-reload
     environment:
       - FLASK_APP=run.py
       - FLASK_ENV=development
@@ -9,11 +9,26 @@ services:
     volumes:
       - ./backend:/app      # hot reload
       - eeg_uploads:/app/uploads
+    env_file:
+      - .env
+      - .env.development
 
-  redis:
-    ports:
-      - "6379:6379"         # expuesto para inspeccionar localmente
+  worker:
+    env_file:
+      - .env
+      - .env.development
 
   db:
     ports:
       - "${POSTGRES_PORT}:5432"
+    env_file:
+      - .env
+      - .env.development
+
+  frontend:
+    build:
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+    env_file:
+      - .env
+      - .env.development
