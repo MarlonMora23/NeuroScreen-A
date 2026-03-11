@@ -1,16 +1,22 @@
-FROM python:3.13-slim
+# Use Python base image
+FROM python:3.11-slim AS base
 
+# Set work directory
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+# Install dependencies
+COPY requirements.txt requirements-win.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY . .
 
-ENV PYTHONPATH=/app
-ENV FLASK_APP=run.py
+# Make entrypoint executable
+RUN chmod +x ./entrypoint.sh
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Expose ports used by api/worker (gunicorn defaults to 5000)
+EXPOSE 5000
 
-ENTRYPOINT ["/entrypoint.sh"]
+# Default command is to run entrypoint (allow override via docker-compose)
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["gunicorn", "run:app", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120"]

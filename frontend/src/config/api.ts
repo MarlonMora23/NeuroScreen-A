@@ -3,37 +3,37 @@
  * Define la URL base del backend y constantes de configuración
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+export const API_BASE_URL = "/api";
 
 export const API_ENDPOINTS = {
   // Auth
-  AUTH_LOGIN: "/api/auth/login",
-  AUTH_LOGOUT: "/api/auth/logout",
-  AUTH_ME: "/api/auth/me",
-  VALIDATE_SESSION: "/api/auth/validate",
-  INVALIDATE_USER_SESSION: (id: string) => `/api/auth/users/${id}/invalidate-session`,
+  AUTH_LOGIN: "/auth/login",
+  AUTH_LOGOUT: "/auth/logout",
+  AUTH_ME: "/auth/me",
+  VALIDATE_SESSION: "/auth/validate",
+  INVALIDATE_USER_SESSION: (id: string) => `/auth/users/${id}/invalidate-session`,
 
   // Users
-  USERS: "/api/users",
-  USER_BY_ID: (id: string) => `/api/users/${id}`,
+  USERS: "/users",
+  USER_BY_ID: (id: string) => `/users/${id}`,
 
   // Patients
-  PATIENTS: "/api/patients",
-  PATIENT_BY_ID: (id: string) => `/api/patients/${id}`,
-  PATIENT_EEG_RECORDS: (id: string) => `/api/patients/${id}/eeg-records`,
-  PATIENT_PREDICTIONS: (id: string) => `/api/patients/${id}/predictions`,
+  PATIENTS: "/patients",
+  PATIENT_BY_ID: (id: string) => `/patients/${id}`,
+  PATIENT_EEG_RECORDS: (id: string) => `/patients/${id}/eeg-records`,
+  PATIENT_PREDICTIONS: (id: string) => `/patients/${id}/predictions`,
 
   // EEG Records
-  EEG_RECORDS: "/api/eeg-records",
-  EEG_RECORD_BY_ID: (id: string) => `/api/eeg-records/${id}`,
-  EEG_RECORD_UPLOAD: "/api/eeg-records/upload",
-  EEG_RECORD_STATUS: (id: string) => `/api/eeg-records/${id}/status`,
-  EEG_RECORD_PREDICTION: (id: string) => `/api/eeg-records/${id}/prediction`,
-  EEG_RECORD_VISUALIZATION: (id: string) => `/api/eeg-records/${id}/visualizations`,
+  EEG_RECORDS: "/eeg-records",
+  EEG_RECORD_BY_ID: (id: string) => `/eeg-records/${id}`,
+  EEG_RECORD_UPLOAD: "/eeg-records/upload",
+  EEG_RECORD_STATUS: (id: string) => `/eeg-records/${id}/status`,
+  EEG_RECORD_PREDICTION: (id: string) => `/eeg-records/${id}/prediction`,
+  EEG_RECORD_VISUALIZATION: (id: string) => `/eeg-records/${id}/visualizations`,
 
   // Predictions
-  PREDICTIONS: "/api/predictions",
-  PREDICTION_BY_ID: (id: string) => `/api/predictions/${id}`,
+  PREDICTIONS: "/predictions",
+  PREDICTION_BY_ID: (id: string) => `/predictions/${id}`,
 };
 
 // Token storage

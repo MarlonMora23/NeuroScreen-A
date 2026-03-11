@@ -119,31 +119,9 @@ cp .env.example .env
 ### 2️⃣ Levantar Todo con Docker (Opción Recomendada ⭐)
 **Esta es la forma recomendada y más sencilla:**
 
-En la raíz del proyecto, ejecuta según el ambiente:
-
-#### 🔧 Desarrollo (con hot-reload)
+En la raíz del proyecto, ejecuta:
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up
-```
-
-#### 🚀 Producción
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
-
-#### 🛑 Detener Servicios
-```bash
-docker compose down
-```
-
-#### 📋 Ver Logs
-```bash
-docker compose logs -f api worker
-```
-
-#### 🏗️ Build en Producción
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml build
+docker-compose up --build
 ```
 
 **Estos comandos levanta automáticamente:**

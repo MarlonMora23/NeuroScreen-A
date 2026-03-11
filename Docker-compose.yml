@@ -1,63 +1,165 @@
 services:
+
   api:
     build: ./backend
     container_name: neuroscreen_api
+
+    command: gunicorn run:app --bind 0.0.0.0:5000 --workers 4 --timeout 120
+
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+
     env_file:
       - .env
+      - .env.production
+
+    environment:
+      REDIS_URL: ${REDIS_URL}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
     volumes:
       - eeg_uploads:/app/uploads
+
+    networks:
+      - frontend_net
+      - backend_net
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    mem_limit: 1g
+    cpus: "1.5"
+
+    restart: unless-stopped
+
 
   worker:
     build: ./backend
     container_name: neuroscreen_worker
-    entrypoint: []
+
     command: celery -A run.celery worker --loglevel=info
+
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+
     env_file:
       - .env
+      - .env.production
+
     volumes:
       - eeg_uploads:/app/uploads
+
+    networks:
+      - backend_net
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    mem_limit: 2g
+    cpus: "2"
+
+    restart: unless-stopped
+
 
   frontend:
     build:
       context: ./frontend
       args:
         - VITE_API_URL=${VITE_API_URL}
+
     container_name: neuroscreen_frontend
+
     ports:
-      - "80:80"
+      - "80:8080"
+
     depends_on:
       - api
+
+    networks:
+      - frontend_net
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    read_only: true
+
+    tmpfs:
+      - /tmp
+
+    mem_limit: 256m
+    cpus: "0.5"
+
+    restart: unless-stopped
+
 
   redis:
     image: redis:7-alpine
     container_name: redis
 
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+
+    env_file:
+      - .env
+      - .env.production
+
+    networks:
+      - backend_net
+
+    security_opt:
+      - no-new-privileges:true
+
+    mem_limit: 256m
+
+    restart: unless-stopped
+
+
   db:
     image: postgres:15
     container_name: neuroscreen_db
+
+    env_file:
+      - .env
+      - .env.production
+
     restart: always
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - backend_net
+
+    security_opt:
+      - no-new-privileges:true
+
+    mem_limit: 1g
+
 
 volumes:
   postgres_data:
   eeg_uploads:
+
+networks:
+  frontend_net:
+  backend_net:
