@@ -37,23 +37,6 @@ NeuroScreen-A/
 └── docker-compose.yml         # Orquestación de servicios
 ```
 
-## 🔧 Configuración
-
-### Frontend (.env - Raíz)
-
-Todas las variables de entorno se configuran en un único archivo `.env` en la raíz del proyecto:
-
-```env
-VITE_API_URL=http://localhost:5000
-POSTGRES_USER=eeguser
-POSTGRES_PASSWORD=eegpassword
-# ... más variables
-```
-
-### Backend (app/config.py)
-
-Configurar según el ambiente (desarrollo, pruebas, producción).
-
 ## 📚 Documentación
 
 - **[backend/readme.md](./backend/readme.md)** - Documentación del backend
@@ -111,12 +94,29 @@ Configurar según el ambiente (desarrollo, pruebas, producción).
 - Docker Compose
 
 ### 1️⃣ Configurar el Entorno
+Todas las variables de entorno se configuran en un único archivo `.env` en la raíz del proyecto, copia el .env.example para tener la base de cuales variables configurar: 
+
 ```bash
 # En la raíz del proyecto, copia .env.example a .env
 cp .env.example .env
 ```
 
-### 2️⃣ Levantar Todo con Docker (Opción Recomendada ⭐)
+Luego entra al .env y digita los valores correspondientes al entorno (desarollo o producción)
+
+```env
+# Para desarrollo
+VITE_API_URL=http://localhost:5000
+POSTGRES_USER=eeguser
+POSTGRES_PASSWORD=eegpassword
+# ... más variables
+
+# Para producción
+VITE_API_URL=http://tu_dominio.com:5000
+POSTGRES_USER=eeguser
+POSTGRES_PASSWORD=your-secure-production-password
+```
+
+### 2️⃣ Levantar Todo con Docker 
 **Esta es la forma recomendada y más sencilla:**
 
 En la raíz del proyecto, ejecuta:
