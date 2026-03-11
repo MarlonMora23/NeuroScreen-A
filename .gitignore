@@ -18,7 +18,6 @@ pip-delete-this-directory.txt
 
 # .env
 .env
-.env.development
 .env.production
 .env.*.local
 
