@@ -23,7 +23,11 @@ export interface CreatePatientRequest {
   birth_date?: string;
 }
 
-export interface UpdatePatientRequest extends Partial<CreatePatientRequest> {}
+export interface UpdatePatientRequest {
+  first_name: string;
+  last_name: string;
+  birth_date?: string;
+}
 
 class PatientService {
   async getPatients(filters?: {

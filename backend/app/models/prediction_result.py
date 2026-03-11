@@ -1,5 +1,5 @@
 import enum
-
+from sqlalchemy.dialects.postgresql import UUID
 from app.extensions import db
 from app.models.base import BaseModel
 
@@ -11,7 +11,7 @@ class PredictionResult(BaseModel):
     __tablename__ = "prediction_results"
 
     eeg_record_id = db.Column(
-        db.Integer,
+        UUID(as_uuid=True),
         db.ForeignKey("eeg_records.id"),
         unique=True,
         index=True,
@@ -23,3 +23,6 @@ class PredictionResult(BaseModel):
     raw_probability = db.Column(db.Numeric(5,4), nullable=True)
 
     model_version = db.Column(db.String(120), nullable=False)
+
+    eeg_record = db.relationship("EegRecord", back_populates="prediction_result")
+    visualization = db.relationship("PredictionVisualization", back_populates="prediction", uselist=False, lazy="select", cascade="all, delete-orphan")

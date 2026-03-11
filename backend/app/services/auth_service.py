@@ -1,9 +1,11 @@
 from datetime import datetime, timezone, timedelta
+from uuid import UUID
 from werkzeug.security import check_password_hash
 from flask_jwt_extended import create_access_token
 from app.models.user import User
 from app.models.session import Session
 from app.extensions import db
+from app.exceptions import NotFoundError, ValidationError, PermissionError, AuthenticationError
 
 SESSION_DURATION_MINUTES = 30
 
@@ -15,13 +17,13 @@ class AuthService:
         password = data.get("password", "")
 
         if not email or not password:
-            raise ValueError("Email and password are required")
+            raise AuthenticationError("Email and password are required")
 
         user = User.query.filter_by(email=email, is_deleted=False).first()
 
         # Same message for both cases to avoid user enumeration
         if not user or not check_password_hash(user.password_hash, password):
-            raise ValueError("Invalid credentials")
+            raise AuthenticationError("Invalid credentials")
 
         # Invalidate existing sessions
         AuthService._invalidate_existing_session(user.id)
@@ -29,7 +31,7 @@ class AuthService:
         now = datetime.now(timezone.utc)
         expiration = now + timedelta(minutes=SESSION_DURATION_MINUTES)
 
-        token = create_access_token(identity=user.id)
+        token = create_access_token(identity=str(user.id))
 
         session = Session(
             user_id=user.id,
@@ -48,7 +50,7 @@ class AuthService:
             "access_token": token,
             "expires_in": SESSION_DURATION_MINUTES * 60,
             "user": {
-                "id": user.id,
+                "id": str(user.id),
                 "email": user.email,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
@@ -96,9 +98,13 @@ class AuthService:
             db.session.commit()
 
     @staticmethod
-    def _invalidate_existing_session(user_id: int) -> None:
+    def _invalidate_existing_session(user_id: str) -> None:
+        try:
+            user_uuid = UUID(str(user_id))
+        except Exception:
+            return
         Session.query.filter_by(
-            user_id=user_id,
+            user_id=user_uuid,
             is_active=True
         ).update({"is_active": False})
         db.session.commit()

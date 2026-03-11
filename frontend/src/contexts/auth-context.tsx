@@ -18,6 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   error: string | null;
 }
 
@@ -38,7 +39,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (err) {
         console.error("Error checking authentication:", err);
+        // Verificar si el error es por sesión expirada (401)
+        if (err instanceof Error && err.message.includes("401")) {
+          // Solo establecer el mensaje si no está ya guardado
+          if (!window.sessionStorage.getItem("sessionExpired")) {
+            window.sessionStorage.setItem(
+              "sessionExpired",
+              "Tu sesión expiró por inactividad.",
+            );
+          }
+        }
         authService.clearToken();
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -48,24 +60,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const handleUnauthorized = (event: Event) => {
-      const customEvent = event as CustomEvent<string>;
-
-      window.sessionStorage.setItem(
-        "sessionExpired",
-        "Tu sesión expiró por seguridad.",
-      );
+    const handleUnauthorized = () => {
+      // A este punto solo llegamos si hay un token pero está expirado
+      // Solo establecer si no está ya guardado para evitar sobrescribir
+      if (!window.sessionStorage.getItem("sessionExpired")) {
+        window.sessionStorage.setItem(
+          "sessionExpired",
+          "Tu sesión expiró por inactividad.",
+        );
+      }
 
       authService.clearToken();
       setUser(null);
 
-      window.sessionStorage.setItem(
-        "sessionExpired",
-        "Tu sesión expiró por seguridad.",
-      );
-
-      // Redirección directa
-      window.location.href = "/login";
+      // Solo redirigir si no estamos ya en /login
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     };
 
     window.addEventListener("unauthorized", handleUnauthorized);
@@ -86,6 +97,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const currentUser = await authService.getCurrentUser();
         setUser(currentUser);
       }
+      // Limpiar el mensaje de sesión expirada solo después de login exitoso
+      window.sessionStorage.removeItem("sessionExpired");
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Error al iniciar sesión";
@@ -106,6 +119,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const updatedUser = await authService.getCurrentUser();
+      setUser(updatedUser);
+    } catch (err) {
+      console.error("Error refreshing user:", err);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -114,6 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated: !!user,
         login,
         logout,
+        refreshUser,
         error,
       }}
     >

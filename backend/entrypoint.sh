@@ -1,8 +1,20 @@
 #!/bin/sh
 set -e  # detener si cualquier comando falla
 
-echo "Running migrations..."
-flask db upgrade
+echo "Waiting for database to be reachable and running migrations..."
+
+# retry until migrations succeed (DB may not be up yet)
+count=0
+until flask db upgrade; do
+    count=$((count + 1))
+    if [ $count -ge 30 ]; then
+        echo "Failed to run migrations after $count attempts, exiting."
+        exit 1
+    fi
+    echo "Database not ready, retrying in 2 seconds... (attempt $count)"
+    sleep 2
+done
+
 echo "Migrations done."
 
 echo "Creating admin if not exists..."
@@ -20,10 +32,11 @@ from werkzeug.security import generate_password_hash
 app = create_app()
 
 with app.app_context():
-    existing = User.query.filter_by(email='admin@neuroscreen.com').first()
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@neuroscreen.com')
+    existing = User.query.filter_by(email=admin_email).first()
     if not existing:
         admin = User(
-            email='admin@neuroscreen.com',
+            email=admin_email,
             password_hash=generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'Admin123')),
             first_name='Admin',
             last_name='Principal',

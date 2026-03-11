@@ -13,9 +13,31 @@ Este backend está diseñado para soportar la aplicación NeuroScreen-A, que ayu
 
 **Esta es la forma correcta de ejecutar el backend:**
 
+#### 🔧 Desarrollo (con hot-reload)
 ```bash
 # Desde la raíz del proyecto
-docker-compose up --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
+
+#### 🚀 Producción
+```bash
+# Desde la raíz del proyecto
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+#### 🛑 Detener Servicios
+```bash
+docker compose down
+```
+
+#### 📋 Ver Logs
+```bash
+docker compose logs -f api worker
+```
+
+#### 🏗️ Build en Producción
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build
 ```
 
 **Esto levanta automáticamente:**
@@ -74,6 +96,7 @@ Ver configuración completa y opciones de desarrollo en [readme.md](/readme.md)
 | **GET** | `api/eeg-records/<eeg_id>` | Obtener detalles de un registro EEG específico |
 | **GET** | `api/patients/<patient_id>/eeg-records` | Obtener todos los registros EEG de un paciente específico |
 | **GET** | `api/eeg-records/<eeg_id>/status` | Obtener el estado actual de procesamiento de un registro EEG |
+| **GET** | `api/eeg-records/<eeg_record_id>/visualizations` | Obtener gráficas de interpretabilidad (waveforms, topomap, feature importance) para un EEG procesado |
 | **DELETE** | `api/eeg-records/<eeg_id>` | Eliminar un registro EEG |
 
 ### Resultados de Predicciones

@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, User, Loader, AlertCircle, Eye, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  User,
+  Loader,
+  AlertCircle,
+  Eye,
+  Trash2,
+  Pencil,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,14 +45,15 @@ import {
 } from "@/services/patient-service";
 import { useAuth } from "@/contexts/auth-context";
 import { extractError } from "@/lib/utils";
+import UpdatePatientDialog from "../dialogs/UpdatePatientDialog"; // ensure proper default import
+import CreatePatientDialog from "@/components/dialogs/CreatePatientDialog";
+import ActionToast, { ActionToastItem } from "@/components/notifications/ActionToast";
 
 const PatientsTab = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [search, setSearch] = useState(""); // Búsqueda que se envía al backend
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
   const [filters, setFilters] = useState({
     has_eeg_records: undefined as boolean | undefined,
     has_pending_eeg: undefined as boolean | undefined,
@@ -56,7 +66,18 @@ const PatientsTab = () => {
   });
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const { user } = useAuth();
+  const [toasts, setToasts] = useState<ActionToastItem[]>([]);
+
+  const addToast = (toast: Omit<ActionToastItem, "id">) => {
+    const id = `toast-${Date.now()}`;
+    setToasts((prev) => [...prev, { ...toast, id }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Cargar pacientes solo cuando cambian los filtros o se hace búsqueda
   useEffect(() => {
@@ -101,42 +122,19 @@ const PatientsTab = () => {
     );
   });
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCreating(true);
-    try {
-      await patientService.createPatient(newPatient);
-      await loadPatients();
-      setNewPatient({
-        identification_number: "",
-        first_name: "",
-        last_name: "",
-        birth_date: "",
-      });
-      setOpen(false);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Error al crear paciente";
-      setError(errorMessage);
-      console.error("Error creating patient:", err);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
+      <ActionToast items={toasts} onDismissItem={removeToast} />
       {error && (
         <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-
       <div className="flex flex-col gap-3 mb-4">
         <div className="flex flex-col justify-between sm:flex-row gap-3 items-stretch sm:items-center">
           <div className="relative flex-1 max-w-sm">
@@ -210,112 +208,28 @@ const PatientsTab = () => {
             </div>
 
             <div className="h-8 w-px bg-border/40 hidden sm:block" />
-
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  className="glow-primary gap-2 shrink-0"
-                  disabled={loading || isCreating}
-                >
-                  <Plus className="w-4 h-4" />
-                  Nuevo Paciente
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="glass border-border/50">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5 text-primary" />
-                    Registrar Nuevo Paciente
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleCreate} className="space-y-4 pt-2">
-                  <div className="space-y-2">
-                    <Label>Cédula/Identificación</Label>
-                    <Input
-                      required
-                      value={newPatient.identification_number}
-                      onChange={(e) =>
-                        setNewPatient({
-                          ...newPatient,
-                          identification_number: e.target.value,
-                        })
-                      }
-                      placeholder="Número de identificación"
-                      className="bg-secondary/50"
-                      disabled={isCreating}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Nombre</Label>
-                      <Input
-                        required
-                        value={newPatient.first_name}
-                        onChange={(e) =>
-                          setNewPatient({
-                            ...newPatient,
-                            first_name: e.target.value,
-                          })
-                        }
-                        placeholder="Nombre"
-                        className="bg-secondary/50"
-                        disabled={isCreating}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Apellido</Label>
-                      <Input
-                        required
-                        value={newPatient.last_name}
-                        onChange={(e) =>
-                          setNewPatient({
-                            ...newPatient,
-                            last_name: e.target.value,
-                          })
-                        }
-                        placeholder="Apellido"
-                        className="bg-secondary/50"
-                        disabled={isCreating}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Fecha de Nacimiento</Label>
-                    <Input
-                      type="date"
-                      value={newPatient.birth_date || ""}
-                      onChange={(e) =>
-                        setNewPatient({
-                          ...newPatient,
-                          birth_date: e.target.value,
-                        })
-                      }
-                      className="bg-secondary/50"
-                      disabled={isCreating}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full glow-primary"
-                    disabled={isCreating}
-                  >
-                    {isCreating ? (
-                      <span className="flex items-center gap-2">
-                        <Loader className="w-4 h-4 animate-spin" />
-                        Creando...
-                      </span>
-                    ) : (
-                      "Registrar Paciente"
-                    )}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <CreatePatientDialog
+              onCreated={loadPatients}
+              onCreateSuccess={(firstName, lastName) =>
+                addToast({
+                  type: "success",
+                  title: "Paciente creado",
+                  message: `${firstName} ${lastName} ha sido registrado correctamente.`,
+                })
+              }
+              onCreateError={(error) =>
+                addToast({
+                  type: "error",
+                  title: "Error al crear paciente",
+                  message: error,
+                })
+              }
+            />
           </div>
         </div>
       </div>
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="glass border-border/50">
+        <DialogContent className="bg-background/95 border-border/50">
           <DialogHeader>
             <DialogTitle>Detalles del paciente</DialogTitle>
           </DialogHeader>
@@ -325,24 +239,28 @@ const PatientsTab = () => {
                 <strong>ID:</strong> {selectedPatient.id}
               </div>
               <div>
-                <strong>Identificación:</strong> {selectedPatient.identification_number}
+                <strong>Identificación:</strong>{" "}
+                {selectedPatient.identification_number}
               </div>
               <div>
-                <strong>Nombre:</strong> {selectedPatient.first_name} {selectedPatient.last_name}
+                <strong>Nombre:</strong> {selectedPatient.first_name}{" "}
+                {selectedPatient.last_name}
               </div>
               <div>
-                <strong>Fecha de nacimiento:</strong> {selectedPatient.birth_date || "-"}
+                <strong>Fecha de nacimiento:</strong>{" "}
+                {selectedPatient.birth_date || "-"}
               </div>
-              <div>
-                <strong>Creado por:</strong> {selectedPatient.created_by}
-              </div>
+              {user?.role === "admin" && (
+                <div>
+                  <strong>Creado por:</strong> {selectedPatient.created_by}
+                </div>
+              )}
             </div>
           ) : (
             <div className="py-6 text-center">Cargando...</div>
           )}
         </DialogContent>
       </Dialog>
-
       {/* Table */}
       <div className="glass rounded-xl overflow-hidden">
         {loading ? (
@@ -353,21 +271,21 @@ const PatientsTab = () => {
           <Table>
             <TableHeader>
               <TableRow className="border-border/30 hover:bg-transparent">
-                <TableHead>ID</TableHead>
+                <TableHead>#</TableHead>
                 <TableHead>Identificación</TableHead>
                 <TableHead>Nombre</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
                 <TableHead className="hidden sm:table-cell">Apellido</TableHead>
                 <TableHead className="hidden md:table-cell">
                   Nacimiento
                 </TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((p) => (
+              {filtered.map((p, index) => (
                 <TableRow key={p.id} className="border-border/20">
                   <TableCell className="font-mono text-primary text-sm">
-                    {p.id}
+                    {index + 1}
                   </TableCell>
                   <TableCell className="font-mono text-sm">
                     {p.identification_number}
@@ -383,43 +301,78 @@ const PatientsTab = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end items-center gap-2">
-                        <Button
+                      <Button
                         variant="ghost"
                         size="sm"
                         onClick={async () => {
                           try {
-                            const data = await patientService.getPatient(String(p.id));
+                            const data = await patientService.getPatient(
+                              String(p.id),
+                            );
                             setSelectedPatient(data);
                             setDetailsOpen(true);
                           } catch (err) {
-                            setError(extractError(err));
+                            const errorMessage = extractError(err);
+                            setError(errorMessage);
+                            addToast({
+                              type: "error",
+                              title: "Error al cargar detalles",
+                              message: errorMessage,
+                            });
                           }
                         }}
                         title="Ver detalles"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Editar"
+                        onClick={() => {
+                          setSelectedPatient(p);
+                          setEditOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4 text-primary" />
+                      </Button>
 
-                      {(user?.role === "admin" || user?.id === p.created_by) && (
+                      {(user?.role === "admin" ||
+                        user?.id === p.created_by) && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="sm" title="Eliminar">
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="glass border-border/50">
+                          <AlertDialogContent className="bg-background/95 border-border/50">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Confirmar eliminación
+                              </AlertDialogTitle>
                             </AlertDialogHeader>
                             <div className="mt-4 text-right space-x-2">
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={async () => {
                                   try {
-                                    await patientService.deletePatient(String(p.id));
+                                    await patientService.deletePatient(
+                                      String(p.id),
+                                    );
+                                    addToast({
+                                      type: "success",
+                                      title: "Paciente eliminado",
+                                      message: `${p.first_name} ${p.last_name} ha sido eliminado correctamente.`,
+                                    });
                                     await loadPatients();
                                   } catch (err) {
-                                    setError(extractError(err));
+                                    const errorMsg = extractError(err);
+                                    setError(errorMsg);
+                                    addToast({
+                                      type: "error",
+                                      title: "Error al eliminar paciente",
+                                      message: errorMsg,
+                                    });
                                   }
                                 }}
                               >
@@ -436,7 +389,7 @@ const PatientsTab = () => {
               {!loading && filtered.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center text-muted-foreground py-8"
                   >
                     No se encontraron pacientes
@@ -447,6 +400,26 @@ const PatientsTab = () => {
           </Table>
         )}
       </div>
+      <UpdatePatientDialog
+        patient={selectedPatient}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onUpdated={loadPatients}
+        onUpdateSuccess={(firstName, lastName) =>
+          addToast({
+            type: "success",
+            title: "Paciente actualizado",
+            message: `${firstName} ${lastName} ha sido actualizado correctamente.`,
+          })
+        }
+        onUpdateError={(error) =>
+          addToast({
+            type: "error",
+            title: "Error al actualizar paciente",
+            message: error,
+          })
+        }
+      />
     </motion.div>
   );
 };

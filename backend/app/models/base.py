@@ -1,11 +1,18 @@
 from app.extensions import db
 from datetime import datetime, timezone
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 
 class AuditMixin(db.Model):
     """Track creation and modification times"""
     __abstract__ = True
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4, 
+        nullable=False
+    )
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = db.Column(

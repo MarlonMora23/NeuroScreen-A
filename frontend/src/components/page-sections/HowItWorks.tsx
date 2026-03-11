@@ -30,7 +30,7 @@ const steps = [
 
 const colorMap = {
   primary: "text-primary border-primary/30 bg-primary/10",
-  accent: "text-accent border-accent/30 bg-accent/10",
+  accent: "text-landingaccent border-landingaccent/30 bg-landingaccent/10",
   success: "text-success border-success/30 bg-success/10",
 };
 

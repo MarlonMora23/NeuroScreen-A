@@ -1,6 +1,8 @@
 from werkzeug.security import generate_password_hash
+from uuid import UUID
 from app.extensions import db
 from app.models.user import User, UserRole
+from app.exceptions import NotFoundError, ValidationError, PermissionError
 
 
 class UserService:
@@ -13,32 +15,32 @@ class UserService:
         required_fields = ["email", "password", "first_name", "last_name"]
         missing = [f for f in required_fields if f not in data]
         if missing:
-            raise ValueError(f"Missing fields: {', '.join(missing)}")
+            raise ValidationError(f"Missing fields: {', '.join(missing)}")
 
         email = data["email"].strip().lower()
 
         # Basic email format validation
         if "@" not in email or "." not in email:
-            raise ValueError("Invalid email format")
+            raise ValidationError("Invalid email format")
 
         # Basic password strength validation
         password = data["password"]
         if len(password) < 8:
-            raise ValueError("Password must be at least 8 characters long")
+            raise ValidationError("Password must be at least 8 characters long")
 
         first_name = data["first_name"].strip()
         last_name = data["last_name"].strip()
         if not first_name:
-            raise ValueError("First name cannot be empty")
+            raise ValidationError("First name cannot be empty")
         if not last_name:
-            raise ValueError("Last name cannot be empty")
+            raise ValidationError("Last name cannot be empty")
 
         if User.query.filter_by(email=email).first():
-            raise ValueError("Email already registered")
+            raise ValidationError("Email already registered")
 
         role_str = data.get("role", "USER").upper()
         if role_str not in UserRole.__members__:
-            raise ValueError("Invalid role")
+            raise ValidationError("Invalid role")
 
         role = UserRole[role_str]
 
@@ -64,10 +66,14 @@ class UserService:
         return [UserService._to_dict(u) for u in users]
 
     @staticmethod
-    def get_user(user_id: int, current_user: User):
-        user = db.session.get(User, user_id)
+    def get_user(user_id: str, current_user: User):
+        try:
+            user_uuid = UUID(str(user_id))
+        except Exception:
+            raise NotFoundError("User not found")
+        user = db.session.get(User, user_uuid)
         if not user or user.is_deleted:
-            raise ValueError("User not found")
+            raise NotFoundError("User not found")
 
         # ADMIN can see any user
         # USER can only see itself
@@ -77,10 +83,14 @@ class UserService:
         return UserService._to_dict(user)
 
     @staticmethod
-    def update_user(user_id: int, data: dict, current_user: User):
-        user = db.session.get(User, user_id)
+    def update_user(user_id: str, data: dict, current_user: User):
+        try:
+            user_uuid = UUID(str(user_id))
+        except Exception:
+            raise NotFoundError("User not found")
+        user = db.session.get(User, user_uuid)
         if not user or user.is_deleted:
-            raise ValueError("User not found")
+            raise NotFoundError("User not found")
 
         # ADMIN can update any user
         # USER can only update itself
@@ -89,7 +99,7 @@ class UserService:
 
         # Rol is read-only
         if "role" in data:
-            raise ValueError("Role cannot be updated")
+            raise ValidationError("Role cannot be updated")
 
         if "email" in data:
             email = data["email"].strip().lower()
@@ -100,9 +110,15 @@ class UserService:
             ).first()
 
             if existing:
-                raise ValueError("Email already registered")
+                raise ValidationError("Email already registered")
 
             user.email = email
+
+        if "password" in data:
+            password = data["password"]
+            if len(password) < 8:
+                raise ValidationError("Password must be at least 8 characters long")
+            user.password_hash = generate_password_hash(password)
 
         user.first_name = data.get("first_name", user.first_name)
         user.last_name = data.get("last_name", user.last_name)
@@ -111,10 +127,14 @@ class UserService:
         return UserService._to_dict(user)
 
     @staticmethod
-    def delete_user(user_id: int, current_user: User):
-        user = db.session.get(User, user_id)
+    def delete_user(user_id: str, current_user: User):
+        try:
+            user_uuid = UUID(str(user_id))
+        except Exception:
+            raise NotFoundError("User not found")
+        user = db.session.get(User, user_uuid)
         if not user or user.is_deleted:
-            raise ValueError("User not found")
+            raise NotFoundError("User not found")
 
         if current_user.role != UserRole.ADMIN:
             raise PermissionError("Only ADMIN can delete users")
@@ -127,7 +147,7 @@ class UserService:
     @staticmethod
     def _to_dict(user: User):
         return {
-            "id": user.id,
+            "id": str(user.id),
             "email": user.email,
             "first_name": user.first_name,
             "last_name": user.last_name,

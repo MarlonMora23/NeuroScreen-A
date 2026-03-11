@@ -2,9 +2,12 @@ from datetime import datetime
 from app.extensions import db
 from app.models.eeg_record import EegRecord, EegStatus
 from app.models.patient import Patient
+from app.models.prediction_result import PredictionResult
+from app.models.prediction_visualization import PredictionVisualization
 from app.models.user import User, UserRole
+from uuid import UUID
 from sqlalchemy import func
-
+from app.exceptions import NotFoundError, ValidationError, PermissionError
 
 class PatientService:
 
@@ -13,22 +16,22 @@ class PatientService:
         required_fields = ["identification_number", "first_name", "last_name"]
         missing = [f for f in required_fields if f not in data]
         if missing:
-            raise ValueError(f"Missing fields: {', '.join(missing)}")
+            raise ValidationError(f"Missing fields: {', '.join(missing)}")
 
         existing_patient = Patient.query.filter_by(
             identification_number=data["identification_number"]
         ).first()
         if existing_patient:
             if existing_patient.is_deleted:
-                raise ValueError("A patient with this identification_number was previously deleted")
-            raise ValueError("identification_number already exists")
+                raise ValidationError("A patient with this identification_number was previously deleted")
+            raise ValidationError("identification_number already exists")
         
         first_name = data["first_name"].strip()
         last_name = data["last_name"].strip()
         if not first_name:
-            raise ValueError("First name cannot be empty")
+            raise ValidationError("First name cannot be empty")
         if not last_name:
-            raise ValueError("Last name cannot be empty")
+            raise ValidationError("Last name cannot be empty")
 
         birth_date = None
         if "birth_date" in data and data["birth_date"]:
@@ -37,7 +40,7 @@ class PatientService:
                     data["birth_date"], "%Y-%m-%d"
                 ).date()
             except ValueError:
-                raise ValueError("birth_date must be YYYY-MM-DD")
+                raise ValidationError("birth_date must be YYYY-MM-DD")
 
         patient = Patient(
             identification_number=data["identification_number"].strip(),
@@ -117,10 +120,14 @@ class PatientService:
         return [PatientService._to_dict(p) for p in patients]
 
     @staticmethod
-    def get_patient(patient_id: int, current_user):
-        patient = db.session.get(Patient, patient_id)
+    def get_patient(patient_id: str, current_user):
+        try:
+            patient_uuid = UUID(str(patient_id))
+        except Exception:
+            raise NotFoundError("Patient not found")
+        patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
-            raise ValueError("Patient not found")
+            raise NotFoundError("Patient not found")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -131,10 +138,14 @@ class PatientService:
         return PatientService._to_dict(patient)
 
     @staticmethod
-    def update_patient(patient_id: int, data: dict, current_user):
-        patient = db.session.get(Patient, patient_id)
+    def update_patient(patient_id: str, data: dict, current_user):
+        try:
+            patient_uuid = UUID(str(patient_id))
+        except Exception:
+            raise NotFoundError("Patient not found")
+        patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
-            raise ValueError("Patient not found")
+            raise NotFoundError("Patient not found")
 
         if (
             current_user.role != UserRole.ADMIN
@@ -143,15 +154,15 @@ class PatientService:
             raise PermissionError("Not allowed to update this patient")
         
         if "identification_number" in data:
-            raise ValueError("identification_number cannot be updated")
+            raise ValidationError("identification_number cannot be updated")
 
-        if "birth_date" in data:
+        if "birth_date" in data and data["birth_date"]:
             try:
                 patient.birth_date = datetime.strptime(
                     data["birth_date"], "%Y-%m-%d"
                 ).date()
             except ValueError:
-                raise ValueError("birth_date must be YYYY-MM-DD")
+                raise ValidationError("birth_date must be YYYY-MM-DD")
 
         patient.first_name = data.get("first_name", patient.first_name)
         patient.last_name = data.get("last_name", patient.last_name)
@@ -161,16 +172,29 @@ class PatientService:
         return PatientService._to_dict(patient)
 
     @staticmethod
-    def delete_patient(patient_id: int, current_user):
-        patient = db.session.get(Patient, patient_id)
+    def delete_patient(patient_id: str, current_user):
+        try:
+            patient_uuid = UUID(str(patient_id))
+        except Exception:
+            raise NotFoundError("Patient not found")
+        patient = db.session.get(Patient, patient_uuid)
         if not patient or patient.is_deleted:
-            raise ValueError("Patient not found")
+            raise NotFoundError("Patient not found")
 
         if (
             current_user.role != UserRole.ADMIN
             and patient.created_by != current_user.id
         ):
             raise PermissionError("Not allowed to delete this patient")
+
+        # Soft delete related EEG records, predictions, and visualizations
+        for eeg_record in patient.eeg_records:
+            if not eeg_record.is_deleted:
+                eeg_record.soft_delete()
+                if eeg_record.prediction_result and not eeg_record.prediction_result.is_deleted:
+                    eeg_record.prediction_result.soft_delete()
+                    if eeg_record.prediction_result.visualization and not eeg_record.prediction_result.visualization.is_deleted:
+                        eeg_record.prediction_result.visualization.soft_delete()
 
         patient.soft_delete()
         db.session.commit()
@@ -180,8 +204,9 @@ class PatientService:
     @staticmethod
     def _to_dict(patient: Patient):
         return {
-            "id": patient.id,
+            "id": str(patient.id),
             "identification_number": patient.identification_number,
+            "created_by": str(patient.created_by),
             "first_name": patient.first_name,
             "last_name": patient.last_name,
             "birth_date": (

@@ -78,6 +78,7 @@ Configurar según el ambiente (desarrollo, pruebas, producción).
 - ✅ Indicadores de carga
 - ✅ Manejo de errores
 - ✅ Responsive design
+- ✅ Visualización de interpretabilidad
 
 ## 🔐 Seguridad
 
@@ -123,7 +124,7 @@ En la raíz del proyecto, ejecuta:
 docker-compose up --build
 ```
 
-Esto levanta automáticamente:
+**Estos comandos levanta automáticamente:**
 - ✅ Backend (Flask) en `http://localhost:5000`
 - ✅ Frontend (React) en `http://localhost` (sirve a través de Nginx)
 - ✅ PostgreSQL (base de datos)
@@ -133,16 +134,6 @@ Esto levanta automáticamente:
 ### 3️⃣ Accede a la Aplicación
 - **Frontend**: http://localhost
 - **Backend API**: http://localhost:5000
-
-### 4️⃣ Crear Usuario Admin (Opcional)
-```bash
-# Dentro del contenedor del backend
-docker exec neuroscreen_api python create_admin.py
-```
-
-### 5️⃣ Inicia Sesión
-- Email: usuario@ejemplo.com (o el configurado en el paso anterior)
-- Contraseña: la configurada
 
 ---
 
@@ -171,7 +162,7 @@ Si quieres desarrollar el frontend con **hot-reload** y cambios en tiempo real, 
    ```bash
    npm run dev
    ```
-   El frontend estará disponible en `http://localhost:5173`
+   El frontend estará disponible en `http://localhost:8080`
 
 **Ventajas**: Hot-reload, cambios instantáneos en desarrollo  
 **Desventajas**: Requiere Node.js instalado localmente

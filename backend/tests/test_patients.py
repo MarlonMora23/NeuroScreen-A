@@ -1,4 +1,20 @@
 import pytest
+import uuid
+
+# helper reused from test_eeg_records
+from io import BytesIO
+
+def upload_eeg(client, headers, patient_id, parquet_file):
+    file_data, filename = parquet_file
+    return client.post(
+        "/api/eeg-records/upload",
+        data={
+            "patient_id": str(patient_id),
+            "file": (file_data, filename, "application/octet-stream")
+        },
+        headers=headers,
+        content_type="multipart/form-data"
+    )
 
 
 class TestCreatePatient:
@@ -62,19 +78,19 @@ class TestListPatients:
         # sample_patient pertenece a regular_user
         response = client.get("/api/patients", headers=another_user_headers)
         ids = [p["id"] for p in response.get_json()]
-        assert sample_patient.id not in ids
+        assert str(sample_patient.id) not in ids
 
     def test_admin_sees_all_patients(self, client, admin_headers, sample_patient):
         response = client.get("/api/patients", headers=admin_headers)
         assert response.status_code == 200
         ids = [p["id"] for p in response.get_json()]
-        assert sample_patient.id in ids
+        assert str(sample_patient.id) in ids
 
     def test_list_excludes_deleted_patients(self, client, admin_headers, sample_patient):
         client.delete(f"/api/patients/{sample_patient.id}", headers=admin_headers)
         response = client.get("/api/patients", headers=admin_headers)
         ids = [p["id"] for p in response.get_json()]
-        assert sample_patient.id not in ids
+        assert str(sample_patient.id) not in ids
 
 
 class TestGetPatient:
@@ -82,7 +98,7 @@ class TestGetPatient:
     def test_user_can_get_own_patient(self, client, user_headers, sample_patient):
         response = client.get(f"/api/patients/{sample_patient.id}", headers=user_headers)
         assert response.status_code == 200
-        assert response.get_json()["id"] == sample_patient.id
+        assert response.get_json()["id"] == str(sample_patient.id)
 
     def test_user_cannot_get_another_users_patient(self, client, another_user_headers, sample_patient):
         response = client.get(f"/api/patients/{sample_patient.id}", headers=another_user_headers)
@@ -93,7 +109,7 @@ class TestGetPatient:
         assert response.status_code == 200
 
     def test_get_nonexistent_patient(self, client, user_headers):
-        response = client.get("/api/patients/99999", headers=user_headers)
+        response = client.get(f"/api/patients/{uuid.uuid4()}", headers=user_headers)
         assert response.status_code == 404
 
     def test_get_deleted_patient_returns_404(self, client, admin_headers, sample_patient):
@@ -145,5 +161,27 @@ class TestDeletePatient:
         assert response.status_code == 200
 
     def test_delete_nonexistent_patient(self, client, user_headers):
-        response = client.delete("/api/patients/99999", headers=user_headers)
+        response = client.delete(f"/api/patients/{uuid.uuid4()}", headers=user_headers)
         assert response.status_code == 404
+
+    def test_deletion_cascades_to_eeg_predictions_and_visualizations(
+        self, client, admin_headers, user_headers, sample_patient, parquet_file
+    ):
+        # upload EEG and ensure prediction/visualization exist
+        r = upload_eeg(client, user_headers, sample_patient.id, parquet_file)
+        eeg_id = r.get_json()["id"]
+
+        pred_resp = client.get(f"/api/eeg-records/{eeg_id}/prediction", headers=user_headers)
+        if pred_resp.status_code == 200:
+            assert "result" in pred_resp.get_json()
+
+        viz_resp = client.get(f"/api/eeg-records/{eeg_id}/visualizations", headers=user_headers)
+        assert viz_resp.status_code in (200, 403)
+
+        # delete the patient
+        response = client.delete(f"/api/patients/{sample_patient.id}", headers=admin_headers)
+        assert response.status_code == 200
+
+        # subsequent requests should yield 404
+        assert client.get(f"/api/eeg-records/{eeg_id}/prediction", headers=admin_headers).status_code == 404
+        assert client.get(f"/api/eeg-records/{eeg_id}/visualizations", headers=admin_headers).status_code == 404

@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowDown, Brain, Waves } from "lucide-react";
-import EEGWave from "./EEGWave";
-import EEGSignalPreview from "./EEGSignalPreview";
+import EEGWave from "../eeg/EEGWave";
+import EEGSignalPreview from "../eeg/EEGSignalPreview";
 
 const HeroSection = () => {
   const navigate = useNavigate();
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+    <section className="relative h-screen pt-32 pb-16 flex items-center justify-center overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
@@ -29,7 +29,7 @@ const HeroSection = () => {
           transition={{ duration: 0.8 }}
           className="text-center max-w-4xl mx-auto"
         >
-          <motion.div
+          {/* <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring" }}
@@ -37,11 +37,12 @@ const HeroSection = () => {
           >
             <Waves className="w-4 h-4 y-8 text-primary" />
             Inteligencia Artificial aplicada a la Neurociencia
-          </motion.div>
+          </motion.div> */}
 
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black leading-tight mb-6">
-            Detección de{" "}
-            <span className="text-gradient">Alcoholismo</span>
+            Detección Temprana {" "}
+            <br />
+            de <span className="text-gradient">Alcoholismo</span>
             <br />
             mediante señales{" "}
             <span className="text-primary">EEG</span>
@@ -80,7 +81,7 @@ const HeroSection = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          className="absolute bottom-0 left-1/2 -translate-x-1/2"
         >
           <ArrowDown className="w-5 h-5 text-muted-foreground animate-bounce" />
         </motion.div>

@@ -19,16 +19,49 @@ interface ProcessingNotificationProps {
   items: ProcessingNotificationItem[];
   onDismissItem?: (id: string) => void;
   onViewResult?: (id: string) => void;
+  /**
+   * Called whenever an existing notification transitions to the "processed" state.
+   * Useful for triggering parent components to reload data (e.g. refresh the
+   * classifications table after a new prediction comes back).
+   */
+  onProcessed?: () => void;
+  autoCloseDuration?: number; // en ms, default 15000
 }
 
 const ProcessingNotification: React.FC<ProcessingNotificationProps> = ({
   items,
   onDismissItem,
   onViewResult,
+  onProcessed,
+  autoCloseDuration = 15000,
 }) => {
   if (items.length === 0) {
     return null;
   }
+
+  const toastRefs = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  React.useEffect(() => {
+    items.forEach((item) => {
+      // Auto-dismiss processed and failed items after duration
+      if (item.status === "processed" || item.status === "failed") {
+        const existingTimeout = toastRefs.current.get(item.id);
+        if (existingTimeout) {
+          clearTimeout(existingTimeout);
+        }
+
+        const timeout = setTimeout(() => {
+          onDismissItem?.(item.id);
+        }, autoCloseDuration);
+
+        toastRefs.current.set(item.id, timeout);
+      }
+    });
+
+    return () => {
+      toastRefs.current.forEach((timeout) => clearTimeout(timeout));
+    };
+  }, [items, onDismissItem, autoCloseDuration]);
 
   const getStatusIcon = (
     status: ProcessingNotificationItem["status"],
@@ -75,6 +108,25 @@ const ProcessingNotification: React.FC<ProcessingNotificationProps> = ({
         return status;
     }
   };
+
+  // keep track of previous items so we can detect state changes
+  const prevItemsRef = React.useRef<ProcessingNotificationItem[]>([]);
+  React.useEffect(() => {
+    if (onProcessed) {
+      const prev = prevItemsRef.current;
+      items.forEach((item) => {
+        const prevItem = prev.find((i) => i.id === item.id);
+        if (
+          prevItem &&
+          prevItem.status !== "processed" &&
+          item.status === "processed"
+        ) {
+          onProcessed();
+        }
+      });
+    }
+    prevItemsRef.current = items;
+  }, [items, onProcessed]);
 
   return (
     <div className="fixed top-20 right-4 z-40 w-full max-w-md">

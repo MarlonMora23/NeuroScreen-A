@@ -58,8 +58,14 @@ class AuthService {
     return localStorage.getItem(TOKEN_KEY);
   }
 
-  isAuthenticated(): boolean {
-    return !!this.getToken();
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      await this.getCurrentUser();
+      return true;
+    } catch {
+      this.clearToken();
+      return false;
+    }
   }
 
   setToken(token: string): void {

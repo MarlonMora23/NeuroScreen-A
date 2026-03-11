@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { ProcessingNotificationItem } from "@/components/ProcessingNotification";
+import { ProcessingNotificationItem } from "@/components/notifications/ProcessingNotification";
 
 interface ProcessingContextType {
   notifications: ProcessingNotificationItem[];

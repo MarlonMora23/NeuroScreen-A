@@ -7,9 +7,11 @@ from .auth import auth_bp
 from .patients import patients_bp
 from .eeg_records import eeg_records_bp
 from .prediction_result import predictions_bp
+from .health import health_bp
 
 api_bp.register_blueprint(users_bp)
 api_bp.register_blueprint(auth_bp)
 api_bp.register_blueprint(patients_bp)
 api_bp.register_blueprint(eeg_records_bp)
 api_bp.register_blueprint(predictions_bp)
+api_bp.register_blueprint(health_bp)

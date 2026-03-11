@@ -6,7 +6,7 @@ from app.models.prediction_result import AlcoholismRisk
 def run_inference(X: np.ndarray) -> tuple[AlcoholismRisk, float, float]:
     model = get_model()
 
-    preds = model.predict(X, verbose=0).flatten()
+    preds = model.predict({"input_layer": X}, verbose=0).flatten()
 
     mean_prob = float(np.mean(preds))
     is_alcoholic = mean_prob >= 0.5

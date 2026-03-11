@@ -178,6 +178,7 @@ Se utiliza React Hook Form con Zod para:
 - **EEGSignalPreview** - Visualización de señales EEG
 - **EEGWave** - Gráfico de ondas EEG
 - **Features** - Sección de características
+- **InterpretabilityCharts** - Gráficas de interpretabilidad (feature importance, topomap, waveforms) disponibles en detalle de registro EEG
 
 ## 🧪 Testing
 
@@ -214,7 +215,7 @@ El proyecto incluye:
 El frontend se conecta con el backend (Flask) a través de la API REST.
 
 Endpoints base configurados en `src/config/api.ts`.
-
+Se ha añadido soporte para visualizar interpretabilidad de modelos mediante nuevos endpoints de visualizaciones (`/eeg-records/<id>/visualizations`), que entregan datos de feature importance, mapas topográficos y formas de onda.
 Para más información sobre los endpoints, consultar la documentación del backend en `backend/readme.md`.
 
 ## 🔐 Seguridad

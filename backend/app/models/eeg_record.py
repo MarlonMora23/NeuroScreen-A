@@ -1,6 +1,8 @@
 from app.extensions import db
 from app.models.base import BaseModel
 import enum
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 
 class EegStatus(enum.Enum):
     PENDING = "pending"
@@ -18,14 +20,14 @@ class EegRecord(BaseModel):
     __tablename__ = "eeg_records"
 
     patient_id = db.Column(
-        db.Integer,
+        UUID(as_uuid=True),
         db.ForeignKey("patients.id"),
         index=True,
         nullable=False
     )
 
     uploader_id = db.Column(
-        db.Integer,
+        UUID(as_uuid=True),
         db.ForeignKey("users.id"),
         nullable=False
     )
@@ -41,4 +43,5 @@ class EegRecord(BaseModel):
 
     processing_time_ms = db.Column(db.Integer, nullable=True)
 
-    prediction_result = db.relationship("PredictionResult", backref="eeg_record", lazy=True, uselist=False)
+    patient = db.relationship("Patient", back_populates="eeg_records")
+    prediction_result = db.relationship("PredictionResult", back_populates="eeg_record", lazy=True, uselist=False)
