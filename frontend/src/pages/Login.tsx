@@ -105,6 +105,8 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading || authLoading}
                 required
+                autoComplete="email"
+                inputMode="email"
                 className="bg-secondary/50 border-border/50 focus:border-primary disabled:opacity-50"
               />
             </div>
@@ -120,12 +122,14 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading || authLoading}
                   required
+                  autoComplete="current-password"
                   className="bg-secondary/50 border-border/50 focus:border-primary pr-10 disabled:opacity-50"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading || authLoading}
+                  tabIndex={-1}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-gray-800 transition-colors disabled:opacity-50"
                 >
                   {showPassword ? (

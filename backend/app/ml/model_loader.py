@@ -1,9 +1,17 @@
 import os
 import threading
 import numpy as np
+
+# Optimizations to reduce TensorFlow memory footprint
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Reduce TF logging overhead
+
 import tensorflow as tf
 from tensorflow import keras
+
+# Configure TensorFlow memory and threading
+tf.config.threading.set_intra_op_parallelism_threads(2)
+tf.config.threading.set_inter_op_parallelism_threads(2)
 
 _model = None
 _model_lock = threading.Lock()

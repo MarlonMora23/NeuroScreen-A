@@ -28,7 +28,11 @@ interface Props {
   onCreateError?: (error: string) => void;
 }
 
-export default function CreateUserDialog({ onCreated, onCreateSuccess, onCreateError }: Props) {
+export default function CreateUserDialog({
+  onCreated,
+  onCreateSuccess,
+  onCreateError,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,11 +80,12 @@ export default function CreateUserDialog({ onCreated, onCreateSuccess, onCreateE
       onCreateSuccess?.(newUser.first_name, newUser.last_name);
       setOpen(false);
     } catch (err) {
-      const errorMessage = err instanceof HttpError 
-        ? err.message 
-        : err instanceof Error 
-          ? err.message 
-          : "Unexpected error";
+      const errorMessage =
+        err instanceof HttpError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Unexpected error";
       setError(errorMessage);
       onCreateError?.(errorMessage);
     } finally {
@@ -103,7 +108,7 @@ export default function CreateUserDialog({ onCreated, onCreateSuccess, onCreateE
       <DialogTrigger asChild>
         <Button className="glow-primary gap-2">
           <Plus className="w-4 h-4" />
-          Nuevo Usuario
+          <span className="hidden md:inline">Nuevo Usuario</span>
         </Button>
       </DialogTrigger>
 

@@ -19,7 +19,6 @@ import { eegService, VisualizationResponse } from "@/services/eeg-service";
 import {
   ALL_CHANNELS,
   CHANNEL_GROUPS,
-  ZOOM_LEVELS,
   EegVisualizationPanelProps,
   TabId,
 } from "./eeg-constants";
@@ -382,7 +381,7 @@ export function EegVisualizationPanel({
                         </p>
                       </div>
                       {/* Left: Channel selector */}
-                      <div id="content" className="flex flex-1 overflow-hidden">
+                      <div id="content" className="flex flex-1 overflow-hidden flex-col md:flex-row">
                         <div className="w-62 border-r border-border/30 flex flex-col shrink-0">
                           <div className="pr-3 pt-3 pb-2 space-y-2">
                             <div className="flex items-center justify-between">

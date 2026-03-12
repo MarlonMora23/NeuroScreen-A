@@ -24,7 +24,11 @@ interface Props {
   onCreateError?: (error: string) => void;
 }
 
-export default function CreatePatientDialog({ onCreated, onCreateSuccess, onCreateError }: Props) {
+export default function CreatePatientDialog({
+  onCreated,
+  onCreateSuccess,
+  onCreateError,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -57,7 +61,8 @@ export default function CreatePatientDialog({ onCreated, onCreateSuccess, onCrea
       onCreateSuccess?.(firstName, lastName);
       setOpen(false);
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Error al crear paciente";
+      const errorMsg =
+        err instanceof Error ? err.message : "Error al crear paciente";
       onCreateError?.(errorMsg);
     } finally {
       setIsCreating(false);
@@ -69,7 +74,7 @@ export default function CreatePatientDialog({ onCreated, onCreateSuccess, onCrea
       <DialogTrigger asChild>
         <Button className="glow-primary gap-2 shrink-0">
           <Plus className="w-4 h-4" />
-          Nuevo Paciente
+          <span className="hidden sm:inline-block">Nuevo Paciente</span>
         </Button>
       </DialogTrigger>
 

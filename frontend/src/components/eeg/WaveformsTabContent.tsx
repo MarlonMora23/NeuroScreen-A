@@ -4,13 +4,9 @@
  * Toolbar + scrubber + chart area for the waveforms tab.
  * Receives all state from useWaveformControls — no local state here.
  */
-
-import React from "react";
 import {
   Play,
   Pause,
-  ZoomIn,
-  ZoomOut,
   RotateCcw,
   Activity,
   Loader2,
@@ -25,7 +21,6 @@ import {
   ZOOM_LEVELS_S,
   ZOOM_LABELS,
   AMP_OPTIONS,
-  SPEED_OPTIONS,
   SPEED_LABELS,
 } from "./useWaveformControls";
 

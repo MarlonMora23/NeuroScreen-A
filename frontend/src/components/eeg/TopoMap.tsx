@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Topomap Component ────────────────────────────────────────────────────────
 
@@ -7,8 +7,20 @@ export function TopoMap({
 }: {
   electrodes: Array<{ name: string; x: number; y: number; importance: number }>;
 }) {
-  const SIZE = 420;
-  const R = 180;
+  const [isSmall, setIsSmall] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmall(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const SIZE = isSmall ? 280 : 420;
+  const R = isSmall ? 120 : 180;
+  const R_ELECTRODE = isSmall ? 6 : 10;
   const CX = SIZE / 2;
   const CY = SIZE / 2;
 
@@ -95,7 +107,7 @@ export function TopoMap({
           const py = CY - el.y * R;
           const color = getColor(el.importance);
           const isHovered = hovered === el.name;
-          const radius = isHovered ? 11 : 8;
+          const radius = isHovered ? R_ELECTRODE + 2 : R_ELECTRODE;
 
           return (
             <g
