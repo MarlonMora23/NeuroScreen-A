@@ -5,8 +5,10 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: '/neuro/',
   envDir: path.resolve(__dirname, ".."),
   server: {
+    allowedHosts: ['lidis.usbcali.edu.co', '.lidis.usbcali.edu.co'],
     host: "::",
     port: 8080,
     hmr: {

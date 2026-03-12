@@ -7,6 +7,7 @@ WORKDIR /app
 # Install dependencies
 COPY requirements.txt requirements-win.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir gunicorn==23.0.0
 
 # Copy application code
 COPY . .
