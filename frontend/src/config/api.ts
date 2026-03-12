@@ -3,7 +3,7 @@
  * Define la URL base del backend y constantes de configuración
  */
 
-export const API_BASE_URL = "/neuro-screen/api";
+export const API_BASE_URL = "/neuro-screen-a/api";
 
 export const API_ENDPOINTS = {
   // Auth
