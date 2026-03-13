@@ -23,7 +23,7 @@ const App = () => (
           <ProcessingProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter basename="/neuro">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />

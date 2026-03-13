@@ -8,13 +8,8 @@ WORKDIR /app
 FROM base AS builder
 
 COPY requirements.txt requirements-win.txt ./
-RUN pip install --user --no-cache-dir -r requirements.txt
-
-# Final stage
-FROM base
-
-# Copy pre-built packages from builder
-COPY --from=builder /root/.local /root/.local
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir gunicorn==23.0.0
 
 # Copy application code
 COPY . .
