@@ -1,13 +1,10 @@
 # Use Python base image
-FROM python:3.11-slim AS base
+FROM python:3.11-slim
 
 # Set work directory
 WORKDIR /app
 
-# Builder stage
-FROM base AS builder
-
-COPY requirements.txt requirements-win.txt ./
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir gunicorn==23.0.0
 

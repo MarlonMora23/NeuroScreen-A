@@ -1,11 +1,9 @@
 from app.extensions import celery 
 
 def create_celery(app):
-    celery.conf.update(app.config)
-
     celery.conf.update(
-        broker_url=app.config["CELERY_BROKER_URL"],
-        result_backend=app.config["CELERY_RESULT_BACKEND"],
+        broker_url=app.config["BROKER_URL"],
+        result_backend=app.config["RESULT_BACKEND"],
         task_serializer="json",
         result_serializer="json",
         accept_content=["json"],

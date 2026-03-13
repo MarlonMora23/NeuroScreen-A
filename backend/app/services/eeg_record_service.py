@@ -7,8 +7,9 @@ from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.exceptions import NotFoundError, ValidationError, PermissionError
 from app.config import Config
+from app.domain.reader.eeg_reader_factory import EegReaderFactory
 
-ALLOWED_EXTENSIONS = {FILE_TYPE.PARQUET: ".parquet"}
+ALLOWED_EXTENSIONS = {'.parquet', '.csv', '.json', '.edf'} 
 
 class EegRecordService:
 
@@ -35,15 +36,11 @@ class EegRecordService:
             raise ValidationError("No file provided")
        
         ext = os.path.splitext(original_filename)[1].lower()
-        allowed_exts = list(ALLOWED_EXTENSIONS.values())
-        if ext not in allowed_exts:
-            raise ValidationError(f"File type not allowed. Allowed: {', '.join(allowed_exts)}")
-
-        # Determine EegFileType from the extension
-        file_type = next(
-            (ft for ft, e in ALLOWED_EXTENSIONS.items() if e == ext),
-            None
-        )
+        if ext not in ALLOWED_EXTENSIONS:
+            supported = ', '.join(sorted(ALLOWED_EXTENSIONS))
+            raise ValidationError(
+                f"File type '{ext}' not allowed. Supported formats: {supported}"
+            )
 
         # Validate file size (read a chunk to determine if it's empty or too large)
         file.seek(0, 2)  # Go to end of file
@@ -53,21 +50,77 @@ class EegRecordService:
         if file_size == 0:
             raise ValidationError("File is empty")
         if file_size > Config.EEG_MAX_FILE_SIZE_BYTES:
-            raise ValidationError(f"File exceeds maximum allowed size of {Config.EEG_MAX_FILE_SIZE_BYTES // (1024*1024)} MB")
+            raise ValidationError(
+                f"File exceeds maximum allowed size of "
+                f"{Config.EEG_MAX_FILE_SIZE_BYTES // (1024*1024)} MB"
+            )
 
-        # Generate a unique name to avoid collisions and not expose the original name
-        unique_filename = f"{uuid.uuid4().hex}{ext}"
-        save_path = os.path.join(Config.EEG_UPLOAD_FOLDER, unique_filename)
+        # Save temporary file to process it
+        # Ensure upload directory exists
         os.makedirs(Config.EEG_UPLOAD_FOLDER, exist_ok=True)
-        file.save(save_path)
+        
+        temp_filename = f"temp_{uuid.uuid4().hex}{ext}"
+        temp_path = os.path.join(Config.EEG_UPLOAD_FOLDER, temp_filename)
+        
+        # Always save to temp file for processing
+        file.save(temp_path)
+        
+        try:
+            # Use factory to get appropriate reader
+            reader = EegReaderFactory.get_reader(temp_path)
+            
+            # Read and validate file - returns DataFrame with only required columns
+            df_processed = reader.read(temp_path)
+            
+            # Save processed file as parquet (optimized, columnar format)
+            unique_filename = f"{uuid.uuid4().hex}.parquet"
+            final_path = os.path.join(Config.EEG_UPLOAD_FOLDER, unique_filename)
+            df_processed.to_parquet(final_path, index=False)
+            
+            # Get the processed file size
+            final_file_size = os.path.getsize(final_path)
+            
+        except ValueError as e:
+            # Column validation error
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+            raise ValidationError(str(e))
+        except Exception as e:
+            # Any other error during file processing
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+            raise ValidationError(f"Error processing file: {str(e)}")
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
 
+        # All validations passed, create record
+        # Determine file type from extension
+        ext_to_type = {
+            '.parquet': FILE_TYPE.PARQUET,
+            '.csv': FILE_TYPE.CSV,
+            '.json': FILE_TYPE.JSON,
+            '.edf': FILE_TYPE.EDF,
+        }
+        file_type = ext_to_type.get(ext, FILE_TYPE.PARQUET)  # Default to PARQUET
+        
         record = EegRecord(
             patient_id=patient_id,
             uploader_id=current_user.id,
             file_name=original_filename,   # original name to show to users
-            file_path=save_path,           # internal route, never exposed to users
-            file_type=file_type,
-            file_size_bytes=file_size,
+            file_path=final_path,          # internal route, never exposed to users
+            file_type=file_type,           # Add file type
+            file_size_bytes=final_file_size,  # Size of processed file
             status=EegStatus.PENDING,
         )
 

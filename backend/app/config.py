@@ -10,9 +10,9 @@ class Config:
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
     JWT_ACCESS_TOKEN_EXPIRES = 86400  # 24 hours
 
-    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
-    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
-    
+    BROKER_URL = os.getenv("CELERY_BROKER_URL")
+    RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+
     # CORS Configuration
     ALLOWED_ORIGINS = [
         origin.strip()
@@ -27,6 +27,7 @@ class Config:
 
     EEG_UPLOAD_FOLDER = os.getenv("EEG_UPLOAD_FOLDER", "uploads/eeg")
     EEG_MAX_FILE_SIZE_BYTES: int = int(os.getenv("EEG_MAX_FILE_SIZE_MB", 200)) * 1024 * 1024  # Convert MB to Bytes
+    SAVE_EEG_FILES = os.getenv("SAVE_EEG_FILES", "false").lower() == "true"
 
 
 class TestingConfig(Config):
@@ -35,7 +36,9 @@ class TestingConfig(Config):
     JWT_SECRET_KEY = "test-secret-key-not-for-production"
     CELERY_TASK_ALWAYS_EAGER = True   
     CELERY_TASK_EAGER_PROPAGATES = True
-    CELERY_BROKER_URL = "memory://"
-    CELERY_RESULT_BACKEND = "cache+memory://"
+    BROKER_URL = "memory://"           
+    RESULT_BACKEND = "cache+memory://"  
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
+    # Save EEG files during testing for validation
+    SAVE_EEG_FILES = True

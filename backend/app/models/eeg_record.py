@@ -33,7 +33,7 @@ class EegRecord(BaseModel):
     )
 
     file_name = db.Column(db.String(120), nullable=False)
-    file_path = db.Column(db.String(500), nullable=False)
+    file_path = db.Column(db.String(500), nullable=True)  # Nullable: deleted after processing if SAVE_EEG_FILES=False
     file_type = db.Column(db.Enum(FILE_TYPE), nullable=False)
     file_size_bytes = db.Column(db.BigInteger, nullable=True)
 
