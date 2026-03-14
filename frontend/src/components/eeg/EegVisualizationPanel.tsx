@@ -26,6 +26,7 @@ import { TopoMap } from "./TopoMap";
 import { ChannelImportanceChart } from "./ChannelImportanceChart";
 import { WaveformsTabContent } from "./WaveformsTabContent";
 import { useWaveformControls } from "./useWaveformControls";
+import { translateError } from "@/utils/error-translations";
 
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 
@@ -76,12 +77,14 @@ export function EegVisualizationPanel({
         } else if (res.status === "pending" || res.status === "processing") {
           setTimeout(poll, 3000);
         } else if (res.status === "failed") {
-          setVizError(res.error_msg ?? "Error al generar visualizaciones");
+          const errorMsg = res.error_msg ?? "Error al generar visualizaciones";
+          setVizError(translateError(errorMsg));
           setVizLoading(false);
         }
       } catch (err) {
         if (!cancelled) {
-          setVizError(err instanceof Error ? err.message : "Error desconocido");
+          const errorMsg = err instanceof Error ? err.message : "Error desconocido";
+          setVizError(translateError(errorMsg));
           setVizLoading(false);
         }
       }

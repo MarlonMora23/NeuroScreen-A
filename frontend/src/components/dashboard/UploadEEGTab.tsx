@@ -22,6 +22,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useProcessing } from "@/contexts/processing-context";
 import { patientService, Patient } from "@/services/patient-service";
 import { eegService, type EEGRecord } from "@/services/eeg-service";
+import { translateError } from "@/utils/error-translations";
 
 const UploadEEGTab = () => {
   const { user } = useAuth();
@@ -49,7 +50,8 @@ const UploadEEGTab = () => {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Error al cargar pacientes";
-      setError(errorMessage);
+      const translatedMessage = translateError(errorMessage);
+      setError(translatedMessage);
       console.error("Error loading patients:", err);
     } finally {
       setLoading(false);
@@ -92,7 +94,8 @@ const UploadEEGTab = () => {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Error al cargar el archivo EEG";
-      setError(errorMessage);
+      const translatedMessage = translateError(errorMessage);
+      setError(translatedMessage);
       console.error("Upload error:", err);
     } finally {
       setUploading(false);

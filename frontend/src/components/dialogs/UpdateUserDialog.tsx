@@ -10,6 +10,7 @@ import {
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Eye, EyeOff, Loader, Pencil } from "lucide-react";
+import { translateError } from "@/utils/error-translations";
 
 interface Props {
   user: AppUser | null;
@@ -79,7 +80,8 @@ export default function UpdateUserDialog({
       onClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Error al actualizar usuario";
-      onUpdateError?.(errorMessage);
+      const translatedMessage = translateError(errorMessage);
+      onUpdateError?.(translatedMessage);
     } finally {
       setIsUpdating(false);
     }
