@@ -21,6 +21,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { HttpError } from "@/services/http-client";
+import { translateError } from "@/utils/error-translations";
 
 interface Props {
   onCreated: () => void;
@@ -86,8 +87,9 @@ export default function CreateUserDialog({
           : err instanceof Error
             ? err.message
             : "Unexpected error";
-      setError(errorMessage);
-      onCreateError?.(errorMessage);
+      const translatedMessage = translateError(errorMessage);
+      setError(translatedMessage);
+      onCreateError?.(translatedMessage);
     } finally {
       setIsCreating(false);
     }

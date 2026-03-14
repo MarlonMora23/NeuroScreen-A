@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import EEGWave from "@/components/eeg/EEGWave";
 import { useAuth } from "@/contexts/auth-context";
 import LoginNavbar from "@/components/layout/LoginNavbar";
+import { translateError } from "@/utils/error-translations";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,8 +18,6 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<{
     text: string;
     type: "error" | "warning";
@@ -45,7 +44,8 @@ const Login = () => {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Error al iniciar sesión";
-      setFeedbackMessage({ text: errorMessage, type: "error" });
+      const translatedMessage = translateError(errorMessage);
+      setFeedbackMessage({ text: translatedMessage, type: "error" });
       console.error("Login error:", err);
     } finally {
       setLoading(false);
@@ -108,13 +108,14 @@ const Login = () => {
               <Label htmlFor="email">Correo electrónico</Label>
               <Input
                 id="email"
+                name="username"
                 type="email"
                 placeholder="usuario@ejemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading || authLoading}
                 required
-                autoComplete="email"
+                autoComplete="username"
                 inputMode="email"
                 className="bg-secondary/50 border-border/50 focus:border-primary disabled:opacity-50"
               />
@@ -125,6 +126,7 @@ const Login = () => {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
