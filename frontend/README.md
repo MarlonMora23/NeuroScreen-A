@@ -67,7 +67,7 @@ src/
 docker-compose up --build
 ```
 
-El frontend estará disponible en `http://localhost`.  
+El frontend estará disponible en `http://localhost:8080/neuro/`.  
 No requiere Node.js instalado en tu máquina.
 
 Ver detalles completos en [readme.md](/readme.md).
@@ -93,16 +93,6 @@ npm install
 bun install
 ```
 
-#### Configuración de Variables de Entorno
-
-Crear un archivo `.env.local` en la raíz del frontend:
-
-```env
-VITE_API_URL=http://localhost:5000
-VITE_SUPABASE_URL=tu_supabase_url
-VITE_SUPABASE_ANON_KEY=tu_supabase_key
-```
-
 #### Inicia el Servidor de Desarrollo
 
 ```bash
@@ -112,7 +102,7 @@ VITE_SUPABASE_ANON_KEY=tu_supabase_key
 # Luego en otra terminal:
 npm run dev
 
-# El frontend estará disponible en http://localhost:5173
+# El frontend estará disponible en http://localhost:8081/neuro/
 ```
 
 #### Build para Producción
@@ -179,18 +169,6 @@ Se utiliza React Hook Form con Zod para:
 - **EEGWave** - Gráfico de ondas EEG
 - **Features** - Sección de características
 - **InterpretabilityCharts** - Gráficas de interpretabilidad (feature importance, topomap, waveforms) disponibles en detalle de registro EEG
-
-## 🧪 Testing
-
-```bash
-# Ejecutar tests
-npm run test
-
-# Tests en modo watch
-npm run test:watch
-```
-
-Los tests utilizan **Vitest** y **React Testing Library**.
 
 ## 📦 Dependencias Principales
 

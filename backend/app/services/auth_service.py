@@ -5,9 +5,10 @@ from flask_jwt_extended import create_access_token
 from app.models.user import User
 from app.models.session import Session
 from app.extensions import db
-from app.exceptions import NotFoundError, ValidationError, PermissionError, AuthenticationError
+from app.exceptions import AuthenticationError
+from app.config import Config
 
-SESSION_DURATION_MINUTES = 30
+SESSION_DURATION_MINUTES = Config.SESSION_DURATION_MINUTES
 
 class AuthService:
 

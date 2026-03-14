@@ -200,7 +200,7 @@ const ClassificationsTab = ({
           </div>
         </div>
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent className="border-border/50 bg-background/95">
+          <DialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
             <DialogHeader>
               <DialogTitle>Detalles de la predicción</DialogTitle>
             </DialogHeader>
@@ -374,7 +374,7 @@ const ClassificationsTab = ({
                                 <Trash2 className="w-4 h-4 text-destructive" />
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-background/95 border-border/50">
+                            <AlertDialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
                                   Confirmar eliminación

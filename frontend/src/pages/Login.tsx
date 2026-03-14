@@ -12,26 +12,31 @@ import LoginNavbar from "@/components/layout/LoginNavbar";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, loading: authLoading, error: authError } = useAuth();
+  const { login, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<{
+    text: string;
+    type: "error" | "warning";
+  } | null>(null);
 
   useEffect(() => {
     const message = sessionStorage.getItem("sessionExpired");
-
     if (message) {
-      setSessionMessage(message);
-      // No eliminar el mensaje aquí; se eliminará después de login exitoso
+      setFeedbackMessage({ text: message, type: "warning" });
+      // Limpiar inmediatamente del sessionStorage al mostrarlo
+      sessionStorage.removeItem("sessionExpired");
     }
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    // Limpiar siempre el mensaje anterior antes de un nuevo intento
+    setFeedbackMessage(null);
     setLoading(true);
 
     try {
@@ -40,7 +45,7 @@ const Login = () => {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Error al iniciar sesión";
-      setError(errorMessage);
+      setFeedbackMessage({ text: errorMessage, type: "error" });
       console.error("Login error:", err);
     } finally {
       setLoading(false);
@@ -84,12 +89,16 @@ const Login = () => {
           </div>
 
           {/* Error Message */}
-          {(error || authError || sessionMessage) && (
-            <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
+          {feedbackMessage && (
+            <Alert
+              className={
+                feedbackMessage.type === "warning"
+                  ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-600"
+                  : "bg-destructive/10 border-destructive/30 text-destructive"
+              }
+            >
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {sessionMessage || error || authError}
-              </AlertDescription>
+              <AlertDescription>{feedbackMessage.text}</AlertDescription>
             </Alert>
           )}
 

@@ -129,7 +129,7 @@ const ProcessingNotification: React.FC<ProcessingNotificationProps> = ({
   }, [items, onProcessed]);
 
   return (
-    <div className="fixed top-20 right-4 z-40 w-full max-w-md">
+    <div className="fixed top-20 right-2 sm:right-4 z-40 w-[calc(100vw-1rem)] sm:w-full sm:max-w-md">
       <AnimatePresence mode="popLayout">
         {items.map((item, index) => (
           <motion.div
@@ -139,7 +139,7 @@ const ProcessingNotification: React.FC<ProcessingNotificationProps> = ({
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             layout
-            className={`mb-3 rounded-lg border p-4 backdrop-blur-3xl ${
+            className={`mb-3 rounded-lg border p-3 sm:p-4 backdrop-blur-3xl ${
               item.status === "processed"
                 ? "bg-success/30 border-success/30 text-success"
                 : item.status === "failed"
@@ -158,19 +158,19 @@ const ProcessingNotification: React.FC<ProcessingNotificationProps> = ({
                       ? "Error en la predicción"
                       : "Procesando predicción"}
                 </p>
-                <p className="text-xs opacity-80 mt-1">
+                <p className="text-xs opacity-80 mt-1 truncate">
                   {item.fileName} • {item.patientName}
                 </p>
-                <p className="text-xs opacity-70 mt-1">
+                <p className="text-xs opacity-70 mt-1 hidden sm:block">
                   {getStatusText(item.status, item.retryAttempt)}
                 </p>
                 {item.errorMsg && item.status === "failed" && (
-                  <p className="text-xs opacity-60 mt-1 break-words">
+                  <p className="text-xs opacity-60 mt-1 truncate sm:break-words sm:whitespace-normal">
                     Error: {item.errorMsg}
                   </p>
                 )}
                 {item.processingTimeMs && item.status === "processed" && (
-                  <p className="text-xs opacity-60 mt-1">
+                  <p className="text-xs opacity-60 mt-1 hidden sm:block">
                     Tiempo: {(item.processingTimeMs / 1000).toFixed(2)}s
                   </p>
                 )}

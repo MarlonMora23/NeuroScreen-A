@@ -112,7 +112,7 @@ export default function CreateUserDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="bg-background/95 border-border/50">
+      <DialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
@@ -128,26 +128,30 @@ export default function CreateUserDialog({
         )}
 
         <form onSubmit={handleCreate} className="space-y-4 pt-2">
-          <div className="space-y-2">
-            <Label>Nombre</Label>
-            <Input
-              required
-              value={newUser.first_name}
-              onChange={(e) =>
-                setNewUser({ ...newUser, first_name: e.target.value })
-              }
-            />
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Nombre</Label>
+              <Input
+                required
+                value={newUser.first_name}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, first_name: e.target.value })
+                }
+                autoComplete="given-name"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>Apellido</Label>
-            <Input
-              required
-              value={newUser.last_name}
-              onChange={(e) =>
-                setNewUser({ ...newUser, last_name: e.target.value })
-              }
-            />
+            <div className="space-y-2">
+              <Label>Apellido</Label>
+              <Input
+                required
+                value={newUser.last_name}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, last_name: e.target.value })
+                }
+                autoComplete="family-name"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -159,10 +163,11 @@ export default function CreateUserDialog({
               onChange={(e) =>
                 setNewUser({ ...newUser, email: e.target.value })
               }
+              autoComplete="email"
+              inputMode="email"
             />
           </div>
 
-          {/* Password */}
           <div className="space-y-2">
             <Label>Contraseña</Label>
             <div className="relative">
@@ -175,9 +180,11 @@ export default function CreateUserDialog({
                   setPasswordError("");
                 }}
                 className="pr-10"
+                autoComplete="new-password"
               />
               <button
                 type="button"
+                tabIndex={-1}
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -190,7 +197,6 @@ export default function CreateUserDialog({
             </div>
           </div>
 
-          {/* Confirm Password */}
           <div className="space-y-2">
             <Label>Confirmar contraseña</Label>
             <div className="relative">
@@ -207,9 +213,11 @@ export default function CreateUserDialog({
                     ? "border-destructive focus:border-destructive"
                     : ""
                 }`}
+                autoComplete="new-password"
               />
               <button
                 type="button"
+                tabIndex={-1}
                 onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -235,7 +243,6 @@ export default function CreateUserDialog({
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar rol" />
               </SelectTrigger>
-
               <SelectContent>
                 <SelectItem value="admin">Administrador</SelectItem>
                 <SelectItem value="user">Usuario</SelectItem>

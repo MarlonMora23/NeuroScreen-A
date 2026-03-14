@@ -89,7 +89,7 @@ export default function UpdateUserDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-background/95 border-border/50">
+      <DialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Pencil className="w-5 h-5 text-primary" />
@@ -98,20 +98,24 @@ export default function UpdateUserDialog({
         </DialogHeader>
 
         <form onSubmit={handleUpdate} className="space-y-4 pt-2">
-          <div className="space-y-2">
-            <Label>Nombre</Label>
-            <Input
-              value={form.first_name}
-              onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-            />
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Nombre</Label>
+              <Input
+                value={form.first_name}
+                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                autoComplete="given-name"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label>Apellido</Label>
-            <Input
-              value={form.last_name}
-              onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-            />
+            <div className="space-y-2">
+              <Label>Apellido</Label>
+              <Input
+                value={form.last_name}
+                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                autoComplete="family-name"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -120,10 +124,11 @@ export default function UpdateUserDialog({
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
+              autoComplete="email"
+              inputMode="email"
             />
           </div>
 
-          {/* Password */}
           <div className="space-y-2">
             <Label>Nueva contraseña</Label>
             <div className="relative">
@@ -136,9 +141,11 @@ export default function UpdateUserDialog({
                   setPasswordError("");
                 }}
                 className="bg-secondary/50 border-border/50 focus:border-primary pr-10"
+                autoComplete="new-password"
               />
               <button
                 type="button"
+                tabIndex={-1}
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -147,7 +154,6 @@ export default function UpdateUserDialog({
             </div>
           </div>
 
-          {/* Confirm password */}
           <div className="space-y-2">
             <Label>Confirmar contraseña</Label>
             <div className="relative">
@@ -162,9 +168,11 @@ export default function UpdateUserDialog({
                 className={`bg-secondary/50 border-border/50 focus:border-primary pr-10 ${
                   passwordError ? "border-destructive focus:border-destructive" : ""
                 }`}
+                autoComplete="new-password"
               />
               <button
                 type="button"
+                tabIndex={-1}
                 onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >

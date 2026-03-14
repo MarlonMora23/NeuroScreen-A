@@ -1,25 +1,31 @@
-# Use Python base image
 FROM python:3.11-slim
 
-# Set work directory
+# bash + gosu en un solo layer
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash gosu \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir gunicorn==23.0.0
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir gunicorn==23.0.0
 
-# Copy application code
+# Crear usuario sin home directory innecesario
+RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser
+
 COPY . .
 
-# Make entrypoint executable
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh \
+    # Permisos sobre el código (no sobre uploads, que viene de volumen)
+    && chown -R appuser:appuser /app \
+    # Crear directorio uploads dentro de la imagen como fallback
+    && mkdir -p /app/uploads/eeg \
+    && chown -R appuser:appuser /app/uploads
 
-# Set PATH for user-installed packages
-ENV PATH=/root/.local/bin:$PATH
+ENV PATH=/app/.local/bin:$PATH
 
-# Expose ports used by api/worker (gunicorn defaults to 5000)
 EXPOSE 5000
 
-# Default command is to run entrypoint (allow override via docker-compose)
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["gunicorn", "run:app", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120"]

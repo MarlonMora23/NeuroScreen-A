@@ -77,8 +77,8 @@ export default function CreatePatientDialog({
           <span className="hidden sm:inline-block">Nuevo Paciente</span>
         </Button>
       </DialogTrigger>
-
-      <DialogContent className="bg-background/95 border-border/50">
+                               
+      <DialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="w-5 h-5 text-primary" />
@@ -93,31 +93,27 @@ export default function CreatePatientDialog({
               required
               value={form.identification_number}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  identification_number: e.target.value,
-                })
+                setForm({ ...form, identification_number: e.target.value })
               }
               placeholder="Número de identificación"
               className="bg-secondary/50"
+              inputMode="numeric"
               disabled={isCreating}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Nombre</Label>
               <Input
                 required
                 value={form.first_name}
                 onChange={(e) =>
-                  setForm({
-                    ...form,
-                    first_name: e.target.value,
-                  })
+                  setForm({ ...form, first_name: e.target.value })
                 }
                 placeholder="Nombre"
                 className="bg-secondary/50"
+                autoComplete="given-name"
                 disabled={isCreating}
               />
             </div>
@@ -128,13 +124,11 @@ export default function CreatePatientDialog({
                 required
                 value={form.last_name}
                 onChange={(e) =>
-                  setForm({
-                    ...form,
-                    last_name: e.target.value,
-                  })
+                  setForm({ ...form, last_name: e.target.value })
                 }
                 placeholder="Apellido"
                 className="bg-secondary/50"
+                autoComplete="family-name"
                 disabled={isCreating}
               />
             </div>
@@ -146,12 +140,10 @@ export default function CreatePatientDialog({
               type="date"
               value={form.birth_date || ""}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  birth_date: e.target.value,
-                })
+                setForm({ ...form, birth_date: e.target.value })
               }
               className="bg-secondary/50"
+              autoComplete="bday"
               disabled={isCreating}
             />
           </div>

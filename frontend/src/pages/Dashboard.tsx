@@ -118,7 +118,7 @@ const Dashboard = () => {
               className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-3 px-2 text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
             >
               <BarChart3 className="w-4 h-4" />
-              <span>Clasificaciones</span>
+              <span>Predicciones</span>
             </TabsTrigger>
           </TabsList>
 
