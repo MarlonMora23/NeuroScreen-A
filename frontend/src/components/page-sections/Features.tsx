@@ -5,7 +5,6 @@ import {
   Database,
   LineChart,
   BrainCircuit,
-  Microscope,
   Eye,
 } from "lucide-react";
 

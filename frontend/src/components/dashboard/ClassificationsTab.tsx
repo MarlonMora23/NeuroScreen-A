@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
-  Activity,
   AlertTriangle,
   CheckCircle2,
   AlertCircle,
@@ -22,11 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import {
-  eegService,
-  PredictionResult,
-  VisualizationResponse,
-} from "@/services/eeg-service";
+import { eegService, PredictionResult } from "@/services/eeg-service";
 import { extractError } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { Eye, Trash2 } from "lucide-react";
@@ -44,11 +39,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Microscope } from "lucide-react";
 import { EegVisualizationPanel } from "@/components/eeg/EegVisualizationPanel";
-import ActionToast, { ActionToastItem } from "@/components/notifications/ActionToast";
+import ActionToast, {
+  ActionToastItem,
+} from "@/components/notifications/ActionToast";
 
 interface ClassificationsTabProps {
   onNavigateToUpload?: () => void;
@@ -142,7 +138,7 @@ const ClassificationsTab = ({
         className="space-y-6"
       >
         <ActionToast items={toasts} onDismissItem={removeToast} />
-      {error && (
+        {error && (
           <Alert className="bg-destructive/10 border-destructive/30 text-destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
@@ -199,12 +195,12 @@ const ClassificationsTab = ({
               size="sm"
             >
               <Plus className="w-4 h-4" />
-              Nueva predicción
+              <span className="hidden sm:inline">Nueva predicción</span>
             </Button>
           </div>
         </div>
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent className="border-border/50 bg-background/95">
+          <DialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
             <DialogHeader>
               <DialogTitle>Detalles de la predicción</DialogTitle>
             </DialogHeader>
@@ -378,7 +374,7 @@ const ClassificationsTab = ({
                                 <Trash2 className="w-4 h-4 text-destructive" />
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-background/95 border-border/50">
+                            <AlertDialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
                                   Confirmar eliminación

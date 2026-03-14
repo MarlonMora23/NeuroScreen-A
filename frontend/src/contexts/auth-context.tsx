@@ -10,6 +10,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { authService, CurrentUser } from "@/services/auth-service";
 
 interface AuthContextType {
@@ -25,6 +26,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,8 +76,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
 
       // Solo redirigir si no estamos ya en /login
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      if (window.location.pathname !== "/neuro/login") {
+        navigate("/login");
       }
     };
 
@@ -86,26 +88,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
-    try {
-      setError(null);
-      const response = await authService.login(email, password);
-      if (response.user) {
-        setUser(response.user);
-      } else {
-        // Si no viene el usuario en la respuesta, intenta obtenerlo
-        const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
-      }
-      // Limpiar el mensaje de sesión expirada solo después de login exitoso
-      window.sessionStorage.removeItem("sessionExpired");
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Error al iniciar sesión";
-      setError(errorMessage);
-      throw err;
+const login = async (email: string, password: string) => {
+  try {
+    setError(null); // limpia error interno del contexto
+    const response = await authService.login(email, password);
+    if (response.user) {
+      setUser(response.user);
+    } else {
+      const currentUser = await authService.getCurrentUser();
+      setUser(currentUser);
     }
-  };
+    window.sessionStorage.removeItem("sessionExpired");
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Error al iniciar sesión";
+    setError(errorMessage);
+    throw err; 
+  }
+};
 
   const logout = async () => {
     try {

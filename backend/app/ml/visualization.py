@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 from app.ml.eeg_config import CHANNELS, SAMPLING_RATE
 from app.ml.model_loader import get_model
+from app.domain.reader.eeg_reader_factory import EegReaderFactory
 
 # Posiciones para topomap 2D
 EEG_POSITIONS_2D = {
@@ -84,7 +85,7 @@ def generate_waveforms(
     import pandas as pd
     from app.ml.preprocessing import normalize_signal
 
-    df = pd.read_parquet(parquet_path)
+    df = EegReaderFactory.get_reader(parquet_path).read(parquet_path)
     trials = df["trial"].unique()
 
     if trial_index >= len(trials):

@@ -56,5 +56,8 @@ dist-ssr
 *.sln
 *.sw?
 
-
+# Docker
 docker-compose.override.yml
+
+# uploads
+**/uploads/*

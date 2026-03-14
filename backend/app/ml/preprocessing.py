@@ -1,8 +1,8 @@
 import gc
 import numpy as np
-import pandas as pd
 from scipy.signal import butter, filtfilt
 from app.ml.eeg_config import CHANNELS, SAMPLING_RATE
+from app.domain.reader.eeg_reader_factory import EegReaderFactory
 
 def normalize_signal(signal: np.ndarray) -> np.ndarray:
     """Z-score normalization of a signal"""
@@ -74,7 +74,7 @@ def build_tensor_from_parquet(
     """
     Build 4D tensor (N, C, T, 1) from a single parquet EEG file.
     """
-    df = pd.read_parquet(parquet_path)
+    df = EegReaderFactory.get_reader(parquet_path).read(parquet_path)
 
     available_channels = set(df['channel'].unique())
     channels_to_use = CHANNELS

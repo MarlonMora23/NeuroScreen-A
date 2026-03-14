@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Plus,
-  Search,
-  User,
-  Loader,
-  AlertCircle,
-  Eye,
-  Trash2,
-  Pencil,
-} from "lucide-react";
+import { Search, Loader, AlertCircle, Eye, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +10,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -47,7 +37,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { extractError } from "@/lib/utils";
 import UpdatePatientDialog from "../dialogs/UpdatePatientDialog"; // ensure proper default import
 import CreatePatientDialog from "@/components/dialogs/CreatePatientDialog";
-import ActionToast, { ActionToastItem } from "@/components/notifications/ActionToast";
+import ActionToast, {
+  ActionToastItem,
+} from "@/components/notifications/ActionToast";
 
 const PatientsTab = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -136,21 +128,19 @@ const PatientsTab = () => {
         </Alert>
       )}
       <div className="flex flex-col gap-3 mb-4">
-        <div className="flex flex-col justify-between sm:flex-row gap-3 items-stretch sm:items-center">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col lg:flex-row lg:justify-between w-full gap-3">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar paciente..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 bg-secondary/50"
+              className="pl-10 bg-secondary/50 w-full"
               disabled={loading}
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-px bg-border/40 hidden sm:block" />
-
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <Label className="text-sm text-muted-foreground whitespace-nowrap">
                 EEG
@@ -208,33 +198,37 @@ const PatientsTab = () => {
             </div>
 
             <div className="h-8 w-px bg-border/40 hidden sm:block" />
-            <CreatePatientDialog
-              onCreated={loadPatients}
-              onCreateSuccess={(firstName, lastName) =>
-                addToast({
-                  type: "success",
-                  title: "Paciente creado",
-                  message: `${firstName} ${lastName} ha sido registrado correctamente.`,
-                })
-              }
-              onCreateError={(error) =>
-                addToast({
-                  type: "error",
-                  title: "Error al crear paciente",
-                  message: error,
-                })
-              }
-            />
+
+            <div className="w-full sm:w-auto">
+              <CreatePatientDialog
+                onCreated={loadPatients}
+                onCreateSuccess={(firstName, lastName) =>
+                  addToast({
+                    type: "success",
+                    title: "Paciente creado",
+                    message: `${firstName} ${lastName} ha sido registrado correctamente.`,
+                  })
+                }
+                onCreateError={(error) =>
+                  addToast({
+                    type: "error",
+                    title: "Error al crear paciente",
+                    message: error,
+                  })
+                }
+              />
+            </div>
           </div>
         </div>
       </div>
+
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="bg-background/95 border-border/50">
+        <DialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
           <DialogHeader>
             <DialogTitle>Detalles del paciente</DialogTitle>
           </DialogHeader>
           {selectedPatient ? (
-            <div className="space-y-2 pt-2">
+            <div className="space-y-2 pt-2 text-sm sm:text-base">
               <div>
                 <strong>ID:</strong> {selectedPatient.id}
               </div>
@@ -251,7 +245,7 @@ const PatientsTab = () => {
                 {selectedPatient.birth_date || "-"}
               </div>
               {user?.role === "admin" && (
-                <div>
+                <div className="break-all">
                   <strong>Creado por:</strong> {selectedPatient.created_by}
                 </div>
               )}
@@ -345,7 +339,7 @@ const PatientsTab = () => {
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-background/95 border-border/50">
+                          <AlertDialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
                             <AlertDialogHeader>
                               <AlertDialogTitle>
                                 Confirmar eliminación

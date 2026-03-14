@@ -111,7 +111,7 @@ POSTGRES_PASSWORD=eegpassword
 # ... más variables
 
 # Para producción
-VITE_API_URL=http://tu_dominio.com:5000
+VITE_API_URL=http://tu_dominio.com
 POSTGRES_USER=eeguser
 POSTGRES_PASSWORD=your-secure-production-password
 ```
@@ -126,13 +126,13 @@ docker-compose up --build
 
 **Estos comandos levanta automáticamente:**
 - ✅ Backend (Flask) en `http://localhost:5000`
-- ✅ Frontend (React) en `http://localhost` (sirve a través de Nginx)
+- ✅ Frontend (React) en `http://localhost:8080/neuro/` (sirve a través de Nginx)
 - ✅ PostgreSQL (base de datos)
 - ✅ Redis (cache y Celery)
 - ✅ Celery Worker (procesamiento asíncronico de EEG)
 
 ### 3️⃣ Accede a la Aplicación
-- **Frontend**: http://localhost
+- **Frontend**: http://localhost:8080/neuro/
 - **Backend API**: http://localhost:5000
 
 ---
@@ -162,7 +162,7 @@ Si quieres desarrollar el frontend con **hot-reload** y cambios en tiempo real, 
    ```bash
    npm run dev
    ```
-   El frontend estará disponible en `http://localhost:8080`
+   El frontend estará disponible en `http://localhost:8081/neuro`
 
 **Ventajas**: Hot-reload, cambios instantáneos en desarrollo  
 **Desventajas**: Requiere Node.js instalado localmente

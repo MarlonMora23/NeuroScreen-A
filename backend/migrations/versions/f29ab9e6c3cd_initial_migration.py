@@ -1,8 +1,8 @@
-"""initial
+"""Initial migration
 
-Revision ID: aa4e4da0773d
+Revision ID: f29ab9e6c3cd
 Revises: 
-Create Date: 2026-03-06 14:38:31.308450
+Create Date: 2026-03-13 20:52:29.386712
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'aa4e4da0773d'
+revision = 'f29ab9e6c3cd'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -71,7 +71,7 @@ def upgrade():
     sa.Column('patient_id', sa.UUID(), nullable=False),
     sa.Column('uploader_id', sa.UUID(), nullable=False),
     sa.Column('file_name', sa.String(length=120), nullable=False),
-    sa.Column('file_path', sa.String(length=500), nullable=False),
+    sa.Column('file_path', sa.String(length=500), nullable=True),
     sa.Column('file_type', sa.Enum('PARQUET', 'CSV', 'JSON', 'EDF', name='file_type'), nullable=False),
     sa.Column('file_size_bytes', sa.BigInteger(), nullable=True),
     sa.Column('status', sa.Enum('PENDING', 'PROCESSING', 'PROCESSED', 'FAILED', name='eegstatus'), nullable=False),

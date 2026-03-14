@@ -3,7 +3,7 @@
  * Cliente base para realizar peticiones HTTP con manejo de token JWT
  */
 
-import { API_BASE_URL, TOKEN_KEY } from "@/config/api";
+import { API_BASE_URL } from "@/config/api";
 import { authService } from "./auth-service";
 
 export class HttpError extends Error {

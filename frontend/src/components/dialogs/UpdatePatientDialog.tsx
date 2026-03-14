@@ -70,7 +70,7 @@ const UpdatePatientDialog: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-background/95 border-border/50">
+      <DialogContent className="bg-background/95 border-border/50 mx-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg rounded-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="w-5 h-5 text-primary" />
@@ -79,7 +79,7 @@ const UpdatePatientDialog: React.FC<Props> = ({
         </DialogHeader>
 
         <form onSubmit={handleUpdate} className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Nombre</Label>
               <Input
@@ -88,6 +88,7 @@ const UpdatePatientDialog: React.FC<Props> = ({
                   setForm({ ...form, first_name: e.target.value })
                 }
                 className="bg-secondary/50"
+                autoComplete="given-name"
                 required
               />
             </div>
@@ -100,6 +101,7 @@ const UpdatePatientDialog: React.FC<Props> = ({
                   setForm({ ...form, last_name: e.target.value })
                 }
                 className="bg-secondary/50"
+                autoComplete="family-name"
                 required
               />
             </div>
@@ -114,6 +116,7 @@ const UpdatePatientDialog: React.FC<Props> = ({
                 setForm({ ...form, birth_date: e.target.value })
               }
               className="bg-secondary/50"
+              autoComplete="bday"
             />
           </div>
 

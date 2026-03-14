@@ -1,3 +1,4 @@
+import os
 import time
 from app.extensions import db, celery
 from app.ml.inference import run_inference
@@ -7,6 +8,7 @@ from app.ml.preprocessing import build_tensor_from_parquet
 from app.audit.audit import log_action
 from app.models.user import User
 from app.models.prediction_visualization import PredictionVisualization
+from app.config import Config
 
 @celery.task(bind=True, max_retries=3)
 def process_eeg_record(self, eeg_record_id: int):
@@ -175,6 +177,16 @@ def generate_eeg_visualizations(self, eeg_record_id: int, prediction_id):
         viz.topomap_data = topomap
         viz.status = "completed"
         db.session.commit()
+
+        # Clean up EEG file if not configured to save (production behavior)
+        # Only keep files in testing/development for validation purposes
+        if not Config.SAVE_EEG_FILES and eeg_record.file_path:
+            try:
+                if os.path.exists(eeg_record.file_path):
+                    os.remove(eeg_record.file_path)
+            except Exception as e:
+                # Log error but don't fail the task - data has already been processed
+                print(f"Warning: Could not delete EEG file {eeg_record.file_path}: {str(e)}")
 
         return {"prediction_id": str(prediction_id), "status": "completed"}
 
