@@ -131,6 +131,55 @@ docker-compose up --build
 - ✅ Redis (cache y Celery)
 - ✅ Celery Worker (procesamiento asíncronico de EEG)
 
+### 2️⃣.5️⃣ Configuración para Desarrollo Local (IMPORTANTE)
+
+Para **desarrollo local**, necesitas crear un archivo `docker-compose.override.yml` en la raíz del proyecto. Este archivo **NO está en GitHub** porque contiene configuraciones que romperían la producción (como puertos expuestos y hot-reload).
+
+**Crea el archivo `docker-compose.override.yml` con el siguiente contenido:**
+
+```yaml
+services:
+  api:
+    command: flask run --host=0.0.0.0 --no-reload
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=development
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/app:/app/app          # (hot reload)
+      - ./backend/run.py:/app/run.py    # entrypoint de Flask
+      - eeg_uploads:/app/uploads        # Uploads separado para no perder permisos
+    env_file:
+      - .env
+
+  worker:
+    env_file:
+      - .env
+
+  db:
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    env_file:
+      - .env
+
+  frontend:
+    build:
+      args:
+        - VITE_API_URL=http://localhost:5000
+        - VITE_BASE=/
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+```
+
+**¿Por qué es necesario?**
+- 🔧 Expone puertos locales (5000, 8080, etc.)
+- 🔄 Habilita hot-reload para desarrollo
+- 🛠️ Override las imágenes con volúmenes locales
+- ⚠️ **No debe subirse a GitHub** - rompe la producción
+
 ### 3️⃣ Accede a la Aplicación
 - **Frontend**: http://localhost:8080/neuro/
 - **Backend API**: http://localhost:5000
