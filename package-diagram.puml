@@ -1,0 +1,322 @@
+@startuml NeuroScreen-A Package Diagram
+!define PRIMARYCOLOR #FF6B6B
+!define SECONDARYCOLOR #4ECDC4
+!define TERTIARYCOLOR #45B7D1
+!define INFRASTRUCTURECOLOR #95E1D3
+
+skinparam packageStyle rectangle
+skinparam backgroundColor #F8F9FA
+skinparam ArrowColor #2C3E50
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #34495E
+  FontColor #2C3E50
+}
+
+title NeuroScreen-A: Diagrama de Paquetes\nArquitectura de Módulos y Dependencias
+
+' ==================== BACKEND ====================
+package "Backend (Python/Flask)" as BACKEND #FF9999 {
+
+  ' Core & Config
+  package "Core" as BE_CORE #FFE5E5 {
+    package "extensions" {
+      [Database (SQLAlchemy)]
+      [JWT Manager]
+      [Limiter]
+      [Migration Tool]
+    }
+    package "config" {
+      [Config Class]
+      [Environment Variables]
+    }
+    package "celery_app" {
+      [Celery Instance]
+    }
+    package "exceptions" {
+      [Custom Exceptions]
+    }
+  }
+
+  ' API Layer
+  package "API Routes" as BE_ROUTES #FFB3B3 {
+    package "routes" {
+      [auth.py]
+      [patients.py]
+      [eeg_records.py]
+      [prediction_result.py]
+      [users.py]
+      [health.py]
+    }
+  }
+
+  ' Business Logic
+  package "Services (Business Logic)" as BE_SERVICES #FFCCCC {
+    package "services" {
+      [auth_service.py]
+      [patient_service.py]
+      [eeg_record_service.py]
+      [prediction_result_service.py]
+      [user_service.py]
+    }
+  }
+
+  ' Data Layer
+  package "Data Models" as BE_MODELS #FFE5CC {
+    package "models" {
+      [User Model]
+      [Patient Model]
+      [EEG Record Model]
+      [Session Model]
+      [Prediction Result Model]
+    }
+  }
+
+  ' ML Layer
+  package "ML Pipeline" as BE_ML #E5F5FF {
+    package "ml" {
+      [eeg_config.py]
+      [preprocessing.py]
+      [model_loader.py]
+      [inference.py]
+      [visualization.py]
+    }
+  }
+
+  ' Tasks
+  package "Async Tasks" as BE_TASKS #FFF9E5 {
+    package "tasks" {
+      [eeg_tasks.py]
+    }
+  }
+
+  ' Infrastructure
+  package "Infrastructure" as BE_INFRA #E8F5E9 {
+    package "audit" {
+      [audit.py]
+      [logging_config.py]
+      [decorators.py]
+    }
+    package "utils" {
+      [security.py]
+      [validators]
+    }
+    package "domain" {
+      [interfaces]
+      [reader]
+    }
+  }
+
+}
+
+' ==================== FRONTEND ====================
+package "Frontend (React/TypeScript)" as FRONTEND #99CCFF {
+
+  ' Core
+  package "Core" as FE_CORE #E5F2FF {
+    package "config" {
+      [api.ts]
+    }
+    package "contexts" {
+      [auth-context.tsx]
+      [processing-context.tsx]
+      [theme-context.tsx]
+    }
+  }
+
+  ' Services & Data
+  package "Data Layer" as FE_DATA #CCE5FF {
+    package "services" {
+      [authService.ts]
+      [patientService.ts]
+      [eegService.ts]
+      [predictionService.ts]
+    }
+    package "hooks" {
+      [useAuth()]
+      [useFetch()]
+      [useTheme()]
+      [custom hooks]
+    }
+  }
+
+  ' UI Components
+  package "UI Components" as FE_UI #B3D9FF {
+    package "components/ui" {
+      [Button]
+      [Input]
+      [Dialog]
+      [Card]
+      [Table]
+      [Form]
+      [shadcn/ui components]
+    }
+    package "components/layout" {
+      [Header]
+      [Sidebar]
+      [Footer]
+      [MainLayout]
+    }
+  }
+
+  ' Feature Components
+  package "Feature Components" as FE_FEATURES #99CCFF {
+    package "components/auth" {
+      [LoginForm]
+      [LogoutButton]
+    }
+    package "components/dashboard" {
+      [Dashboard]
+      [Statistics]
+      [Charts]
+    }
+    package "components/eeg" {
+      [EEGUploader]
+      [EEGViewer]
+      [FileList]
+    }
+    package "components/page-sections" {
+      [PageHeader]
+      [PageContent]
+    }
+    package "components/dialogs" {
+      [ConfirmDialog]
+      [ErrorDialog]
+    }
+    package "components/notifications" {
+      [Toast]
+      [Notification]
+    ]
+  }
+
+  ' Pages
+  package "Pages (Routes)" as FE_PAGES #80BFF9 {
+    package "pages" {
+      [HomePage]
+      [DashboardPage]
+      [PatientsPage]
+      [EEGPage]
+      [LoginPage]
+    }
+  }
+
+  ' Utilities
+  package "Utilities" as FE_UTILS #99E5FF {
+    package "lib" {
+      [Helper functions]
+      [Constants]
+    }
+    package "utils" {
+      [formatters]
+      [validators]
+      [converters]
+    }
+  }
+
+}
+
+' ==================== DEPENDENCIAS BACKEND ====================
+
+BE_ROUTES --> BE_SERVICES : imports
+BE_ROUTES --> BE_CORE : uses extensions, config
+BE_ROUTES --> BE_INFRA : uses security, audit
+
+BE_SERVICES --> BE_MODELS : CRUD operations
+BE_SERVICES --> BE_CORE : uses db (extensions)
+BE_SERVICES --> BE_INFRA : uses security
+
+BE_MODELS --> BE_CORE : uses db (SQLAlchemy)
+
+BE_TASKS --> BE_ML : calls inference pipeline
+BE_TASKS --> BE_SERVICES : saves results
+BE_TASKS --> BE_MODELS : query/update records
+BE_TASKS --> BE_CORE : uses celery, db
+
+BE_ML --> BE_MODELS : reads EEG metadata
+BE_ML --> BE_INFRA : uses config, logging
+
+BE_INFRA --> BE_CORE : uses config, extensions
+
+' ==================== DEPENDENCIAS FRONTEND ====================
+
+FE_PAGES --> FE_FEATURES : renders
+FE_PAGES --> FE_DATA : uses hooks, services
+
+FE_FEATURES --> FE_UI : renders
+FE_FEATURES --> FE_DATA : uses hooks, contexts
+FE_FEATURES --> FE_CORE : uses contexts
+
+FE_UI --> FE_UTILS : uses helpers
+FE_UI --> FE_CORE : uses theme-context
+
+FE_DATA --> FE_CORE : uses config, auth-context
+FE_DATA --> FE_UTILS : uses formatters, validators
+
+FE_CORE --> FE_DATA : provides state
+
+' ==================== RELACIONES INTERNAS ====================
+
+BE_CORE --> BE_CORE : circular initialization
+
+' ==================== NOTAS ====================
+
+note right of BE_ROUTES
+  **API Endpoints:**
+  - POST /api/auth/login
+  - GET/POST /api/patients
+  - POST /api/eeg_records
+  - GET /api/predictions
+  - GET /api/health
+  
+  **Middleware:**
+  - @jwt_required
+  - @limiter.limit()
+  - @audit.logged
+end note
+
+note right of BE_SERVICES
+  **Patrón Service:**
+  Encapsula lógica de negocio
+  - Validaciones
+  - Transformaciones
+  - Autenticación
+  - Cache management
+end note
+
+note right of BE_ML
+  **Inferencia EEG:**
+  1. preprocessing() → normaliza señal
+  2. model_loader.load() → carga Keras
+  3. inference() → predicción binaria
+  4. visualization() → gráficos
+  
+  Entrada: Archivo EEG (64 canales)
+  Salida: Probabilidad alcoholismo (0-1)
+end note
+
+note right of FE_PAGES
+  **SPA Routing:**
+  - / (HomePage)
+  - /dashboard (Protegida)
+  - /patients (Protegida)
+  - /eeg (Protegida)
+  - /login (Pública)
+end note
+
+note right of FE_FEATURES
+  **Feature Module Pattern:**
+  Cada feature implementa:
+  - Component visual
+  - State management (hook)
+  - Business logic
+  - Error handling
+end note
+
+note right of FE_CORE
+  **Contextos Compartidos:**
+  - Auth: usuario, token, permisos
+  - Processing: status tareas async
+  - Theme: dark/light mode
+end note
+
+@enduml

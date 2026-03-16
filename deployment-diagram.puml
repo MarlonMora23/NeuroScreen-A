@@ -1,0 +1,138 @@
+@startuml NeuroScreen-A Deployment Diagram
+!define AWSPUML https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v14.0/dist
+!include AWSPUML/AWSCommon.puml
+
+title NeuroScreen-A: Diagrama de Despliegue\nArquitectura de Microservicios con Docker
+
+' Definición de dispositivos
+artifact "📱 Cliente" as CLIENT {
+  artifact "Navegador Web" as BROWSER {
+    artifact "React SPA" as REACT_APP
+  }
+}
+
+artifact "🖥️ Docker Host" as DOCKER_HOST {
+  
+  ' Red Frontend
+  artifact "frontend_net" as FRONTEND_NET {
+    component "**Frontend Container**\n[Port: 9002:8080]" as FRONTEND_CONTAINER {
+      artifact "Nginx Server" as NGINX
+      artifact "React Build\n(node_modules,\nbuild artifacts)" as REACT_BUILD
+    }
+  }
+
+  ' Red Backend
+  artifact "backend_net" as BACKEND_NET {
+    
+    component "**API Container**\n[Port: 5000]" as API_CONTAINER {
+      artifact "Flask Application\n(Gunicorn)" as FLASK_APP
+      artifact "@app/routes\n@app/services\n@app/models" as FLASK_MODULES
+      database "@app/ml/\nEEG Models\nPreprocessing" as ML_MODELS
+      artifact "Security & Auth\n(JWT, CORS, Rate Limiting)" as FLASK_SECURITY
+    }
+
+    component "**Worker Container**\n[Celery]" as WORKER_CONTAINER {
+      artifact "Celery Worker" as CELERY_WORKER
+      artifact "@app/tasks/\neeg_tasks.py" as CELERY_TASKS
+      artifact "EEG Inference\n& Processing" as CELERY_PROCESSING
+    }
+
+    component "**Database**\n[PostgreSQL 15]" as DB_CONTAINER {
+      database "postgres_data\nvolume" as POSTGRES_DB
+      artifact "Alembic Migrations\nv1: Initial Schema" as DB_MIGRATIONS
+      artifact "SQLAlchemy Models:\n- User\n- Patient\n- EEG Records\n- Predictions" as DB_MODELS
+    }
+
+    component "**Cache**\n[Redis 7]" as REDIS_CONTAINER {
+      database "redis_data\nvolume" as REDIS_STORE
+      artifact "Session Storage\nCelery Queue" as REDIS_FUNCTIONS
+    }
+
+    component "**Shared Storage**" as STORAGE {
+      database "eeg_uploads\nvolume" as UPLOADS_VOLUME
+      database "DL Models\nvolume (ro)" as MODELS_VOLUME
+      artifact "eegnet_model.keras" as EEGNET_MODEL
+      artifact "Preprocessed\nEEG files" as EEG_FILES
+    }
+  }
+}
+
+
+' === RELACIONES HTTP/REST ===
+CLIENT -->|GET / POST\nHTTP/HTTPS\nJSON| BROWSER
+BROWSER -->|Port 9002\nHTTP Requests\n(Vite dev/prod)| FRONTEND_CONTAINER
+FRONTEND_CONTAINER -->|GET /api/*\nJWT Token\nJSON| API_CONTAINER
+
+' === RELACIONES ENTRE CONTENEDORES BACKEND ===
+API_CONTAINER -->|Send Task\n(celery.send_task)| CELERY_WORKER : Redis Broker
+CELERY_WORKER -->|Retrieve Task\nfrom Queue| REDIS_CONTAINER : REDIS_URL
+
+API_CONTAINER -->|CRUD Operations\n(SQLAlchemy)| DB_CONTAINER : TCP 5432
+CELERY_WORKER -->|Read/Write\nEEG Results| DB_CONTAINER : TCP 5432
+
+API_CONTAINER -->|Cache Auth/Session\n(redis-py)| REDIS_CONTAINER : TCP 6379
+CELERY_WORKER -->|Store Results\nUpdate Progress| REDIS_CONTAINER : TCP 6379
+
+' === RELACIONES DE ALMACENAMIENTO ===
+FLASK_APP -->|Load Models\n(Keras)| MODELS_VOLUME "/app/dl_models:ro"
+CELERY_PROCESSING -->|Load & Execute\nEEG Inference| EEGNET_MODEL
+CELERY_PROCESSING -->|Write Predictions| UPLOADS_VOLUME "/app/uploads"
+API_CONTAINER -->|Read/Serve\nEEG Records| UPLOADS_VOLUME "/app/uploads"
+
+' === RELACIONES INTERNAS DE CONTENEDORES ===
+API_CONTAINER -->|Gunicorn Workers\n(1.5 CPU, 1GB RAM)| FLASK_MODULES
+FLASK_MODULES -->|Import| ML_MODELS
+FLASK_MODULES -->|Enforce| FLASK_SECURITY
+
+CELERY_WORKER -->|Export\ncelery instance| CELERY_TASKS
+CELERY_TASKS -->|Inference Pipeline| CELERY_PROCESSING
+
+DB_CONTAINER -->|Init Schema| DB_MODELS
+DB_CONTAINER -->|Versioning| DB_MIGRATIONS
+
+' === CONFIGURACIÓN Y HEALTHCHECKS ===
+API_CONTAINER -.->|Depends on\n(service_healthy)| DB_CONTAINER : Healthcheck: pg_isready
+WORKER_CONTAINER -.->|Depends on\n(service_healthy)| DB_CONTAINER
+API_CONTAINER -.->|Depends on\n(service_healthy)| REDIS_CONTAINER : Healthcheck: redis-cli ping
+WORKER_CONTAINER -.->|Depends on\n(service_healthy)| REDIS_CONTAINER
+FRONTEND_CONTAINER -.->|Depends on| API_CONTAINER : docker-compose
+
+' === VOLÚMENES Y RED DECLARADOS ===
+note right of BACKEND_NET
+  **Redes Privadas Docker:**
+  - frontend_net: Frontend ↔ API
+  - backend_net: API ↔ Worker ↔ DB ↔ Redis
+  
+  **Aislamiento de Red:**
+  - Cap_drop: ALL
+  - Cap_add: CHOWN, SETUID, SETGID
+  - no-new-privileges: true
+end note
+
+note bottom of DOCKER_HOST
+  **Volumenes Persistentes:**
+  - postgres_data: BD PostgreSQL
+  - redis_data: Cache/Queue
+  - eeg_uploads: Registros EEG + Predicciones
+  - dl_models: Modelos ML (read-only)
+  
+  **Límites de Recursos:**
+  - API: 1.5 CPU, 1GB RAM
+  - Worker: 1 CPU, 2GB RAM
+  - Frontend: 0.5 CPU, 256MB RAM
+  - Redis: 256MB RAM
+end note
+
+note left of CLIENT
+  **Flujo de Datos del Usuario:**
+  1. Cliente accede http://localhost:9002
+  2. Nginx sirve React SPA
+  3. Frontend realiza GET /api/health
+  4. Frontend autentica: POST /api/auth/login
+  5. Frontend obtiene: GET /api/patients
+  6. Cliente carga EEG: POST /api/eeg_records
+  7. Celery procesa asincronamente
+  8. Cliente consulta: GET /api/predictions
+end note
+
+@enduml
