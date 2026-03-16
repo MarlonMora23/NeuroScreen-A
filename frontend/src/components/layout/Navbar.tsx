@@ -26,7 +26,6 @@ const Navbar = () => {
           <button
             onClick={toggleTheme}
             aria-label="Toggle theme"
-            aria-placeholder="Toggle theme"
             className="p-2 rounded-md hover:bg-muted/10 transition-colors"
           >
             {theme === "dark" ? (

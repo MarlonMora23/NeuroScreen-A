@@ -1,0 +1,254 @@
+@startuml NeuroScreen-A Use Case Diagram
+!define PRIMARYCOLOR #FF6B6B
+!define SECONDARYCOLOR #4ECDC4
+!define TERTIARYCOLOR #45B7D1
+!define SYSTEMCOLOR #295099
+
+skinparam actorBackgroundColor #E5E5E5
+skinparam actorBorderColor #34495E
+skinparam usecaseBorderColor #34495E
+skinparam usecaseBackgroundColor #FFFFFF
+skinparam usecase {
+  FontColor #2C3E50
+  BorderColor #34495E
+}
+skinparam actor {
+  FontColor #2C3E50
+}
+
+title NeuroScreen-A: Diagrama de Casos de Uso\nSistema de Detección de Alcoholismo por EEG
+
+' ==================== ACTORES ====================
+
+actor "👤 Usuario\n(Médico/Clínico)" as USER
+actor "🛡️ Administrador\nSistema" as ADMIN
+actor "🧠 Sistema ML\n(Celery Worker)" as ML_SYSTEM
+participant "🗄️ Base de Datos" as DB
+
+' ==================== SISTEMA ====================
+
+rectangle "NeuroScreen-A System" {
+
+  ' === AUTENTICACIÓN ===
+  usecase "UC1: Iniciar Sesión\n(Login)" as UC_LOGIN
+  usecase "UC2: Cerrar Sesión\n(Logout)" as UC_LOGOUT
+  usecase "UC3: Registrarse\n(solo ADMIN)" as UC_REGISTER
+
+  ' === GESTIÓN DE PACIENTES ===
+  usecase "UC4: Crear Paciente" as UC_CREATE_PATIENT
+  usecase "UC5: Listar Pacientes" as UC_LIST_PATIENTS
+  usecase "UC6: Ver Detalles Paciente" as UC_VIEW_PATIENT
+  usecase "UC7: Actualizar Info Paciente" as UC_UPDATE_PATIENT
+  usecase "UC8: Eliminar Paciente\n(Soft Delete)" as UC_DELETE_PATIENT
+
+  ' === GESTIÓN DE REGISTROS EEG ===
+  usecase "UC9: Subir Archivo EEG" as UC_UPLOAD_EEG
+  usecase "UC10: Listar Registros EEG" as UC_LIST_EEG
+  usecase "UC11: Ver Detalles EEG" as UC_VIEW_EEG
+  usecase "UC12: Consultar Estado\nProcesamiento" as UC_CHECK_STATUS
+  usecase "UC13: Eliminar Registro EEG" as UC_DELETE_EEG
+
+  ' === PREDICCIONES Y RESULTADOS ===
+  usecase "UC14: Ver Predicciones\nObtenidas" as UC_VIEW_PREDICTIONS
+  usecase "UC15: Ver Visualizaciones\nEEG" as UC_VIEW_VISUALIZATIONS
+  usecase "UC16: Descargar Reporte\nPDF" as UC_DOWNLOAD_REPORT
+
+  ' === ML PROCESSING ===
+  usecase "UC17: Procesar EEG\n(Async)" as UC_PROCESS_EEG
+  usecase "UC18: Ejecutar Inferencia\nNeuronal" as UC_RUN_INFERENCE
+  usecase "UC19: Generar Visualización\nde Importancia" as UC_GENERATE_VIZ
+  usecase "UC20: Guardar Resultado\nPredicción" as UC_SAVE_RESULT
+
+  ' === AUDITORÍA Y SEGURIDAD ===
+  usecase "UC21: Validar Autenticación\nJWT" as UC_AUTH_JWT
+  usecase "UC22: Aplicar Rate Limiting" as UC_RATE_LIMIT
+  usecase "UC23: Registrar Auditoría\nde Acciones" as UC_AUDIT_LOG
+  usecase "UC24: Verificar Permisos\nAcceso" as UC_CHECK_PERMS
+
+}
+
+' ==================== RELACIONES: USUARIO ====================
+
+USER --> UC_LOGIN : accede
+USER --> UC_LOGOUT : ejecuta
+USER --> UC_CREATE_PATIENT : crea
+USER --> UC_LIST_PATIENTS : consulta
+USER --> UC_VIEW_PATIENT : visualiza
+USER --> UC_UPDATE_PATIENT : modifica
+USER --> UC_UPLOAD_EEG : sube archivos
+USER --> UC_LIST_EEG : lista
+USER --> UC_VIEW_EEG : consulta
+USER --> UC_CHECK_STATUS : monitorea
+USER --> UC_VIEW_PREDICTIONS : analiza
+USER --> UC_VIEW_VISUALIZATIONS : interpreta
+USER --> UC_DOWNLOAD_REPORT : descarga
+
+' ==================== RELACIONES: ADMIN ====================
+
+ADMIN --> UC_LOGIN : accede
+ADMIN --> UC_LOGOUT : ejecuta
+ADMIN --> UC_REGISTER : crea usuarios
+ADMIN --> UC_LIST_PATIENTS : ve todos los
+ADMIN --> UC_VIEW_PATIENT : visualiza
+ADMIN --> UC_DELETE_PATIENT : elimina (soft)
+ADMIN --> UC_LIST_EEG : ve todos
+ADMIN --> UC_DELETE_EEG : elimina
+ADMIN --> UC_AUDIT_LOG : revisa
+
+' ==================== RELACIONES: SISTEMA ML ====================
+
+ML_SYSTEM --> UC_PROCESS_EEG : ejecuta automática
+ML_SYSTEM --> UC_RUN_INFERENCE : realiza
+ML_SYSTEM --> UC_GENERATE_VIZ : calcula
+ML_SYSTEM --> UC_SAVE_RESULT : persiste
+
+' ==================== INCLUSIONES (USES) ====================
+
+UC_LOGIN ..|> UC_AUTH_JWT : <<include>>
+UC_LOGIN ..|> UC_RATE_LIMIT : <<include>>
+UC_LOGIN ..|> UC_AUDIT_LOG : <<include>>
+
+UC_UPLOAD_EEG ..|> UC_CHECK_PERMS : <<include>>
+UC_UPLOAD_EEG ..|> UC_RATE_LIMIT : <<include>>
+UC_UPLOAD_EEG ..|> UC_AUDIT_LOG : <<include>>
+
+UC_PROCESS_EEG ..|> UC_RUN_INFERENCE : <<include>>
+UC_PROCESS_EEG ..|> UC_GENERATE_VIZ : <<include>>
+UC_PROCESS_EEG ..|> UC_SAVE_RESULT : <<include>>
+UC_PROCESS_EEG ..|> UC_AUDIT_LOG : <<include>>
+
+UC_VIEW_EEG ..|> UC_CHECK_PERMS : <<include>>
+UC_VIEW_EEG ..|> UC_AUDIT_LOG : <<include>>
+
+UC_DELETE_PATIENT ..|> UC_CHECK_PERMS : <<include>>
+UC_DELETE_PATIENT ..|> UC_AUDIT_LOG : <<include>>
+
+UC_DELETE_EEG ..|> UC_CHECK_PERMS : <<include>>
+UC_DELETE_EEG ..|> UC_AUDIT_LOG : <<include>>
+
+UC_VIEW_PREDICTIONS ..|> UC_CHECK_PERMS : <<include>>
+UC_VIEW_PREDICTIONS ..|> UC_AUDIT_LOG : <<include>>
+
+UC_VIEW_VISUALIZATIONS ..|> UC_CHECK_PERMS : <<include>>
+
+' ==================== EXTENSIONES (EXTENDS) ====================
+
+UC_VIEW_PREDICTIONS ..> UC_VIEW_VISUALIZATIONS : <<extend>>
+UC_VIEW_VISUALIZATIONS ..> UC_DOWNLOAD_REPORT : <<extend>>
+
+UC_CREATE_PATIENT ..> UC_LIST_PATIENTS : <<extend>>
+UC_UPDATE_PATIENT ..> UC_VIEW_PATIENT : <<extend>>
+
+UC_UPLOAD_EEG ..> UC_CHECK_STATUS : <<extend>>
+UC_CHECK_STATUS ..> UC_VIEW_PREDICTIONS : <<extend>>
+
+' ==================== NOTAS ====================
+
+note right of UC_LOGIN
+  **Precondiciones:**
+  - Email y password válidos
+  - Credenciales en BD
+  
+  **Postcondiciones:**
+  - JWT token generado
+  - Sesión creada en Redis
+  - Auditoría registrada
+end note
+
+note right of UC_UPLOAD_EEG
+  **Precondiciones:**
+  - Usuario autenticado
+  - Paciente existe
+  - Archivo: .edf, .csv, .parquet, .json
+  - Tamaño < 500 MB
+  
+  **Postcondiciones:**
+  - EEG guardado en BD (status=PENDING)
+  - Archivo convertido a parquet
+  - Tarea encolada en Redis
+  - Retorna 202 Accepted inmediatamente
+end note
+
+note right of UC_PROCESS_EEG
+  **Ejecutada por:**
+  - Celery Worker (background)
+  
+  **Incluye:**
+  1. Lectura archivo Parquet
+  2. Validación canales (64 requeridos)
+  3. Extracción bandas frecuencia
+  4. Normalización Z-score
+  5. Inferencia neuronal
+  6. Guardado predicción
+  7. Encadenamiento viz
+  
+  **Reintentos:** max 3 con backoff
+  **Timeout:** 120 segundos
+end note
+
+note right of UC_RUN_INFERENCE
+  **Modelo:**
+  - EEGNet (Compact CNN)
+  - Input: 384 canales (64 × 6 bandas)
+  - Input: 256 muestras por ventana
+  - Output: Probabilidad alcoholismo
+  
+  **Agregación:**
+  - Predicción por muestra
+  - Voto mayoritario
+  - Confidence score
+end note
+
+note right of UC_GENERATE_VIZ
+  **Visualizaciones Generadas:**
+  1. Waveforms (gráficos temporales)
+  2. Channel Importance (qué canales importan)
+  3. Topomap (mapa 2D espacial)
+  
+  **Formato:**
+  - JSON para backend
+  - Renderizable en React
+  
+  **Estado:**
+  - pending → processing → completed/failed
+end note
+
+note bottom of UC_AUTH_JWT
+  **Seguridad:**
+  - Validación de JWT token en cada request
+  - Extracción de user_id y roles
+  - Verificación de expiración
+  - Rechazo si inválido (401 Unauthorized)
+end note
+
+note bottom of UC_RATE_LIMIT
+  **Límites:**
+  - POST /login: 10 req/min (IP)
+  - POST /upload: 10 req/min (usuario)
+  - GET /api/*: 100 req/min (usuario)
+  - Backend: Redis counter
+end note
+
+note bottom of UC_AUDIT_LOG
+  **Información Registrada:**
+  - action: create, read, update, delete, infer
+  - resource: patient, eeg_record, prediction
+  - user_id, timestamp
+  - Detalles contextuales
+  - Status: success/failed
+  - Persistencia: MongoDB/logs
+end note
+
+note bottom of UC_CHECK_PERMS
+  **Verificaciones:**
+  - ¿Usuario es Admin?
+     → Acceso total
+  - ¿Usuario es propietario del recurso?
+     → Acceso permitido
+  - Otro usuario
+     → 403 Forbidden
+  
+  **Recurso:** patient_id, eeg_id, prediction_id
+end note
+
+@enduml
