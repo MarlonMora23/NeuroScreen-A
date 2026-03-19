@@ -94,18 +94,23 @@ class PredictionResultService:
         except Exception:
             raise NotFoundError("Prediction not found")
 
-        query = PredictionResultService._base_prediction_query()
-        query = PredictionResultService._apply_access_filter(query, current_user)
-
-        prediction = query.filter(PredictionResult.id == pred_uuid).first()
+        # First, check if the prediction exists (without access filter)
+        prediction = (
+            PredictionResultService._base_prediction_query()
+            .filter(PredictionResult.id == pred_uuid)
+            .first()
+        )
 
         if not prediction or prediction.is_deleted:
             raise NotFoundError("Prediction not found")
 
-        eeg = prediction.eeg_record
+        # Then verify access permissions using the filter
+        query = PredictionResultService._base_prediction_query()
+        query = PredictionResultService._apply_access_filter(query, current_user)
+        accessible_prediction = query.filter(PredictionResult.id == pred_uuid).first()
 
-        if not eeg or eeg.is_deleted:
-            raise NotFoundError("Associated EEG record not found")
+        if not accessible_prediction:
+            raise PermissionError("Not allowed to access this prediction")
 
         return PredictionResultService._to_dict(prediction)
 

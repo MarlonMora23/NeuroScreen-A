@@ -215,7 +215,7 @@ const UploadEEGTab = () => {
             <input
               ref={inputRef}
               type="file"
-              accept=".edf,.csv,.json,.parquet"
+              accept=".parquet,.csv,.json"
               className="hidden"
               disabled={uploading}
               onChange={(e) => {
@@ -248,7 +248,7 @@ const UploadEEGTab = () => {
                   </span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Formatos soportados: .edf, .csv, .json, .parquet
+                  Formatos soportados: .parquet, .csv, .json, 
                 </p>
               </div>
             )}

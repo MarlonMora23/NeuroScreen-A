@@ -93,4 +93,4 @@ def delete_prediction(prediction_id):
     prediction = PredictionResultService.delete_prediction(prediction_id, current_user)
 
     details = {"prediction_id": str(prediction_id)}
-    return jsonify({"message": f"Prediction {prediction['id']} deleted"}), 200, details
+    return jsonify(prediction), 200, details

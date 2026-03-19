@@ -134,7 +134,7 @@ def generate_channel_importance(X: np.ndarray) -> dict:
     with tf.GradientTape() as tape:
         tape.watch(X_tf)
 
-        predictions = model({"input_layer": X_tf}, training=False)
+        predictions = model(X_tf, training=False)
 
         class_idx = int(tf.argmax(predictions[0]).numpy())
         loss = predictions[:, class_idx]
