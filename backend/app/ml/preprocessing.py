@@ -3,6 +3,9 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 from app.ml.eeg_config import CHANNELS, SAMPLING_RATE
 from app.domain.reader.eeg_reader_factory import EegReaderFactory
+import logging
+
+logger = logging.getLogger(__name__)
 
 def normalize_signal(signal: np.ndarray) -> np.ndarray:
     """Z-score normalization of a signal"""
@@ -138,4 +141,14 @@ def build_tensor_from_parquet(
     if not X_data:
         return np.array([])
 
-    return np.array(X_data, dtype=np.float32)
+    result = np.array(X_data, dtype=np.float32)
+    
+    # DEBUG: Log statistics about processed data
+    logger.debug(f"Preprocessed {parquet_path}: "
+                f"shape={result.shape}, "
+                f"min={np.min(result):.4f}, "
+                f"max={np.max(result):.4f}, "
+                f"mean={np.mean(result):.4f}, "
+                f"std={np.std(result):.4f}")
+    
+    return result

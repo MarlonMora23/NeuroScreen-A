@@ -2,6 +2,7 @@ import os
 import time
 from app.extensions import db, celery
 from app.ml.inference import run_inference
+from app.ml.model_loader import get_model_version
 from app.models.eeg_record import EegRecord, EegStatus
 from app.models.prediction_result import PredictionResult
 from app.ml.preprocessing import build_tensor_from_parquet
@@ -44,7 +45,7 @@ def process_eeg_record(self, eeg_record_id: int):
             result=label,
             confidence=confidence,
             raw_probability=raw_prob,       
-            model_version="eegnet_v1"
+            model_version=get_model_version()
         )
 
         db.session.add(prediction)
@@ -75,7 +76,7 @@ def process_eeg_record(self, eeg_record_id: int):
                 "eeg_record_id": eeg_record_id,
                 "patient_id": str(eeg_record.patient_id),
                 "uploader_id": str(uploader.id),
-                "model_version": "eegnet_v1",
+                "model_version": get_model_version(),
                 "result": label,
                 "confidence": float(confidence),
                 "processing_time_ms": eeg_record.processing_time_ms
@@ -104,7 +105,7 @@ def process_eeg_record(self, eeg_record_id: int):
                 "eeg_record_id": eeg_record_id,
                 "patient_id": str(eeg_record.patient_id),
                 "uploader_id": str(uploader.id),
-                "model_version": "eegnet_v1",
+                "model_version": get_model_version(),
                 "error": str(e)[:200]
             },
             status="failed"

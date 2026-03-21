@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Brain,
@@ -25,11 +25,18 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { notifications, dismissNotification } = useProcessing();
-  const [activeTab, setActiveTab] = useState("patients");
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("activeDashboardTab") || "patients";
+  });
   // incrementing counter used to signal child components to refresh data
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const isAdmin = user?.role === "admin";
   const { theme, toggleTheme } = useTheme();
+
+  // Persist active tab to localStorage
+  useEffect(() => {
+    localStorage.setItem("activeDashboardTab", activeTab);
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
