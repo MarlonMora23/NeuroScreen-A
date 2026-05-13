@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 
 const stats = [
-  { value: "89.3%", label: "Precisión", sub: "Conjunto de validación" },
+  { value: "89.6%", label: "Precisión", sub: "Conjunto de validación" },
   { value: "0.96", label: "AUC", sub: "Capacidad discriminativa" },
   { value: "34", label: "Canales EEG", sub: "Electrodos analizados" },
   { value: "122", label: "Sujetos", sub: "Dataset de entrenamiento" },
@@ -67,20 +67,20 @@ const Results = () => {
               Real: Control
             </div>
             <div className="rounded-lg bg-success/20 text-success font-bold py-4">
-              688
+              612
             </div>
             <div className="rounded-lg bg-destructive/20 text-destructive font-bold py-4">
-              98
+              177
             </div>
 
             <div className="text-xs text-muted-foreground font-mono pr-4 flex items-center">
               Real: Alcohólico
             </div>
             <div className="rounded-lg bg-destructive/20 text-destructive font-bold py-4">
-              131
+              52
             </div>
             <div className="rounded-lg bg-success/20 text-success font-bold py-4">
-              1294
+              1370
             </div>
           </div>
         </motion.div>
