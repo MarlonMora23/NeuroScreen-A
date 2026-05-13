@@ -16,7 +16,7 @@ tf.config.threading.set_inter_op_parallelism_threads(2)
 _model = None
 _model_version = None
 _model_lock = threading.Lock()
-MODEL_PATH = "dl_models/eegnet_model_balanced.keras"
+MODEL_PATH = "dl_models/eegnet_model.keras"
 
 def get_model():
     global _model
